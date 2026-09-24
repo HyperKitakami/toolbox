@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>调色板生成 · 工具箱</title>
+<meta name="description" content="在线调色板生成器：从一个主色生成互补、类似、三角、分裂互补、四方、单色六种协调配色方案，并给出 11 级明暗色阶，支持导出 CSS 变量、SCSS、Tailwind 与 JSON。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/site.css">
+<link rel="stylesheet" href="../../css/tool.css">
+<script src="../../js/theme-init.js"></script>
+</head>
+<body data-tool="palette-generator" data-hub="color">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/color/">颜色</a>
+      <span class="sep">/</span>
+      <span aria-current="page">调色板生成</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>调色板生成</h1>
+        <p class="lead">
+          给一个主色，按色环上的位置关系生成一套协调配色 —— 互补、类似、三角、分裂互补、四方、单色六种方案。
+          下面还有一套 11 级明暗色阶，配色和色阶都能一键导出成 CSS 变量、SCSS、Tailwind 或 JSON。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">6 种配色方案</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="tool-body">
+
+        <!-- 1. 主色与方案 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">主色</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="pg-random" title="快捷键 R">随机换一个</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="toolbar">
+              <input type="color" class="color-input" id="pg-picker" value="#6c5ce7"
+                     aria-label="用系统取色盘选主色">
+              <input class="input input--mono input--grow" type="text" id="pg-text" value="#6c5ce7"
+                     placeholder="#6c5ce7 或 rgb(108,92,231)" spellcheck="false"
+                     autocomplete="off" autocapitalize="off" aria-label="主色值">
+            </div>
+
+            <div class="choice-row" id="pg-harmonies" role="group" aria-label="配色方案"></div>
+          </div>
+          <div class="panel-foot">
+            <span id="pg-harmony-note"></span>
+          </div>
+        </section>
+
+        <!-- 2. 配色结果 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">配色结果</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="pg-copy-palette">复制全部 HEX</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="palette-grid" id="pg-palette"></div>
+
+            <div class="palette-export">
+              <span class="toolbar-label">导出</span>
+              <button class="btn btn--sm" type="button" data-export="css">CSS 变量</button>
+              <button class="btn btn--sm" type="button" data-export="scss">SCSS</button>
+              <button class="btn btn--sm" type="button" data-export="tailwind">Tailwind</button>
+              <button class="btn btn--sm" type="button" data-export="json">JSON</button>
+            </div>
+          </div>
+          <div class="panel-foot">
+            <span>点任意色块复制它的 HEX；导出按钮点了直接把代码复制到剪贴板</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 3. 明暗色阶 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">明暗色阶</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm" type="button" id="pg-copy-shades">复制全部</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="color-strip" id="pg-shades"></div>
+        </div>
+        <div class="panel-foot">
+          <span>从主色派生的 11 级色阶，色相不变、明度从 95 到 12；点任意一块复制它的 HEX</span>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>六种配色方案</h3>
+        <ul>
+          <li><strong>互补</strong> —— 色环正对面（相差 180°），对比最强，适合做主色 + 强调色。</li>
+          <li><strong>类似</strong> —— 取相邻的 ±30°，观感柔和统一，适合做渐层或同一区域的多个层次。</li>
+          <li><strong>三角</strong> —— 等距三分（120°），鲜明又不失衡，是最常用的多色方案。</li>
+          <li><strong>分裂互补</strong> —— 互补色两侧各取一个（±150° / ±210°），比正互补更耐看。</li>
+          <li><strong>四方</strong> —— 等距四分（90°），颜色最丰富，也最难平衡，通常要再分主次。</li>
+          <li><strong>单色</strong> —— 只用一个色相，固定取 20%–80% 五级明度，靠明暗拉开层次。</li>
+        </ul>
+        <p>
+          除单色外，其余方案都沿用主色的饱和度与明度，只改色相 ——
+          这样出来的几个颜色亮度一致，摆在一起不会有某个色特别抢眼。
+        </p>
+      </div>
+
+      <div class="tool-note">
+        <h3>明暗色阶怎么算的</h3>
+        <p>
+          保持色相不变，把明度从 95 均匀降到 12，取 11 级。饱和度会按明度做一个钟形修正 ——
+          越靠近两端收得越多，浅色不至于发荧光、深色不至于发焦，中间几级保持主色的饱和度。
+        </p>
+        <p>
+          这一套和上面的「单色」方案不一样：单色方案是配色方案的一种，只有 5 个色；
+          色阶是给设计令牌用的，级数更多、跨度更大。
+        </p>
+      </div>
+
+      <div class="tool-note">
+        <h3>关于随机</h3>
+        <p>
+          随机是在 HSL 空间里取的：色相任意，饱和度 35%–95%、明度 30%–70%。
+          完全随机取 RGB 经常会得到发灰或过暗过亮的颜色，配出来没法用，
+          所以这里把范围收在有彩色的区间内。用
+          <code class="mono">crypto.getRandomValues</code> 取随机数，不支持时回退到
+          <code class="mono">Math.random</code>。
+        </p>
+        <p>
+          快捷键是 <span class="kbd">R</span>，焦点在输入框里时不会触发。
+          上游用的是空格键，那会劫持页面滚动，键盘用户按空格翻页时会莫名其妙换掉颜色。
+        </p>
+      </div>
+
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <p>
+          本工具的功能设计与交互移植自
+          <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+          的 Palette Generator 与 <code class="mono">js/color-utils.js</code>（MIT 许可），
+          在此做了中文化、界面统一，修掉了若干缺陷，并补上明暗色阶与 JSON 导出。
+          详见 <code class="mono">THIRD-PARTY.md</code>。
+        </p>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+        <a href="../../sitemap.xml">站点地图</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js" defer></script>
+<script src="../../js/color-utils.js" defer></script>
+<script src="../../js/site.js" defer></script>
+<script src="../../js/tools/palette-generator.js" defer></script>
+</body>
+</html>

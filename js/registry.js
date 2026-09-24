@@ -1,0 +1,331 @@
+/* ==========================================================================
+   registry.js — 全站唯一数据源
+   --------------------------------------------------------------------------
+   加一个工具 = 建目录 + 在这里加一行。首页、分类页、搜索都由这里驱动。
+   status: 'ready'（已上线，可点击） | 'planned'（规划中，虚线卡片，不可点击）
+   hot:    排序权重，越大越靠前（首页与分类页按此降序）
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  /* --- 站点信息 ---------------------------------------------------------- */
+  var SITE = {
+    name: '工具箱',
+    en: 'Toolbox',
+    tagline: '本地运行 · 数据不出浏览器',
+    desc: '一个纯静态、零依赖的个人在线工具箱。所有工具都在你的浏览器里运行，输入不会被上传到任何服务器。'
+  };
+
+  /* --- 图标（24×24 线性图标，只存路径） ---------------------------------- */
+  var ICONS = {
+    code:     '<path d="M8.5 6 3.5 12l5 6"/><path d="M15.5 6l5 6-5 6"/>',
+    shield:   '<path d="M12 3.2 19 6v6.1c0 4.4-2.9 7.4-7 8.7-4.1-1.3-7-4.3-7-8.7V6l7-2.8Z"/><path d="m9.3 12.1 1.9 1.9 3.5-3.7"/>',
+    palette:  '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.1 0-.9.8-1.7 1.7-1.7h1.3a4.7 4.7 0 0 0 4.7-4.7c0-3.7-3.8-6.6-8.5-6.6Z"/><circle cx="7.7" cy="12" r="1.1"/><circle cx="9.6" cy="8.3" r="1.1"/><circle cx="14.3" cy="7.9" r="1.1"/>',
+    swap:     '<path d="M4.5 8.5h13l-3.2-3.2"/><path d="M19.5 15.5h-13l3.2 3.2"/>',
+    sparkles: '<path d="M11.5 3.8l1.7 4.6 4.6 1.7-4.6 1.7-1.7 4.6-1.7-4.6L5.2 10l4.6-1.7 1.7-4.5Z"/><path d="M18 15.5l.8 2.1 2.1.8-2.1.8-.8 2.1-.8-2.1-2.1-.8 2.1-.8.8-2.1Z"/>',
+    text:     '<path d="M5 7h14"/><path d="M5 12h14"/><path d="M5 17h8"/>',
+    search:   '<circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/>',
+    bolt:     '<path d="M13.2 3 5.8 13.4h5l-.9 7.6 7.4-10.4h-5l.9-7.6Z"/>'
+  };
+
+  /* --- 分类（Hub） ------------------------------------------------------- */
+  var HUBS = [
+    {
+      id: 'developer',
+      name: '开发者',
+      en: 'Developer',
+      icon: 'code',
+      accent: '#2f6bff',
+      desc: '格式化、解析与调试类工具。处理 JSON、SQL、正则、差异对比这些每天都在打交道的活儿。',
+      tags: ['JSON', 'SQL', '正则', 'Diff']
+    },
+    {
+      id: 'security',
+      name: '安全',
+      en: 'Security',
+      icon: 'shield',
+      accent: '#e5484d',
+      desc: '编码、摘要与凭据相关工具。全部在本地计算，密钥和密码不会离开你的浏览器。',
+      tags: ['Base64', '哈希', 'JWT', 'TOTP']
+    },
+    {
+      id: 'color',
+      name: '颜色',
+      en: 'Color',
+      icon: 'palette',
+      accent: '#d6409f',
+      desc: '取色、格式转换与配色方案。给界面调色时的一站式辅助。',
+      tags: ['HEX', 'RGB', 'HSL', '对比度']
+    },
+    {
+      id: 'converters',
+      name: '转换',
+      en: 'Converters',
+      icon: 'swap',
+      accent: '#0d9488',
+      desc: '格式与单位之间的互转。时间戳、进制、图片、数字格式。',
+      tags: ['时间戳', '进制', '图片', '单位']
+    },
+    {
+      id: 'generators',
+      name: '生成器',
+      en: 'Generators',
+      icon: 'sparkles',
+      accent: '#d97706',
+      desc: '随机生成类工具。密码、UUID、二维码、测试数据，用密码学安全的随机源。',
+      tags: ['密码', 'UUID', '二维码', '假数据']
+    },
+    {
+      id: 'text',
+      name: '文本',
+      en: 'Text',
+      icon: 'text',
+      accent: '#16a34a',
+      desc: '文本处理与统计。字数统计、命名风格转换、去重排序、批量替换。',
+      tags: ['字数', '大小写', '去重', '替换']
+    }
+  ];
+
+  /* --- 工具清单 ---------------------------------------------------------- */
+  /* [slug, 名称, 分类, 描述, 标签, 状态, 热度] */
+  var TOOLS = [
+    /* ---- 文本 ---------------------------------------------------------- */
+    ['word-counter', '字数统计', 'text',
+      '实时统计字符数、词数、行数、段落数与预计阅读时长，中英文混排分别计算。',
+      ['字数', '统计', '阅读时长'], 'ready', 90],
+
+    ['text-case', '文本大小写转换', 'text',
+      '驼峰、帕斯卡、下划线、短横线、全大写等命名风格互转，也支持整段文本大小写。',
+      ['大小写', '命名', 'camelCase', 'snake_case'], 'planned', 82],
+
+    ['text-sort-dedupe', '文本排序去重', 'text',
+      '按行排序、去重、删除空行，支持字典序、数值序与随机打乱。',
+      ['排序', '去重', '行处理'], 'planned', 74],
+
+    ['text-replace', '批量查找替换', 'text',
+      '支持纯文本与正则的批量替换，替换前先给出命中预览。',
+      ['替换', '正则', '批量'], 'planned', 70],
+
+    ['whitespace-cleaner', '空白清理', 'text',
+      '清除多余空格、空行、行首行尾空白与不可见字符，一键规范化文本。',
+      ['空白', '清理', '规范化'], 'planned', 58],
+
+    ['slug-generator', 'Slug 生成', 'text',
+      '把标题转成干净的 URL 标识，支持中文转拼音与自定义分隔符。',
+      ['slug', 'URL', '拼音'], 'planned', 54],
+
+    ['line-number', '批量加行号', 'text',
+      '给每行添加序号或统一前后缀，方便整理日志与清单。',
+      ['行号', '前缀', '日志'], 'planned', 42],
+
+    /* ---- 开发者 -------------------------------------------------------- */
+    ['json-formatter', 'JSON 格式化', 'developer',
+      '格式化、压缩与校验 JSON，带语法高亮和行号，解析失败时定位到具体行列并给出中文说明。',
+      ['json', '格式化', '校验', '压缩'], 'ready', 98],
+
+    ['diff-checker', '文本差异对比', 'developer',
+      '逐行比对两段文本，高亮新增、删除与修改，支持并排与统一视图和行内字符级差异。',
+      ['diff', '对比', '比对'], 'ready', 92],
+
+    ['regex-tester', '正则表达式测试', 'developer',
+      '实时高亮全部命中位置，逐字拆解表达式的含义，列出捕获分组与索引，支持替换预览与分享链接。',
+      ['regex', '正则', '匹配', '分组', '替换'], 'ready', 88],
+
+    ['sql-formatter', 'SQL 格式化', 'developer',
+      '按指定方言美化 SQL，关键字自动大写、缩进对齐。',
+      ['sql', '格式化', '数据库'], 'suspended', 80],
+
+    ['markdown-preview', 'Markdown 预览', 'developer',
+      '实时渲染 Markdown，生成可跳转的文档大纲，附字数与阅读时长统计，草稿自动保存在本地。',
+      ['markdown', '预览', 'md', '大纲'], 'ready', 78],
+
+    ['cron-parser', 'Cron 表达式解析', 'developer',
+      '把 Cron 表达式翻译成人话，并列出未来若干次触发时间。',
+      ['cron', '定时', '解析'], 'suspended', 72],
+
+    ['yaml-formatter', 'YAML 格式化', 'developer',
+      '美化与校验 YAML，支持与 JSON 双向互转。',
+      ['yaml', '格式化', 'json'], 'suspended', 66],
+
+    ['xml-formatter', 'XML 格式化', 'developer',
+      '缩进美化或压缩 XML，校验标签闭合与嵌套结构。',
+      ['xml', '格式化', '校验'], 'suspended', 60],
+
+    ['csv-viewer', 'CSV 查看器', 'developer',
+      '把 CSV 渲染成表格，自动探测分隔符与编码（含 GBK），支持表头识别、点击排序、分页浏览与导出 JSON / TSV。',
+      ['csv', '表格', '预览', 'tsv'], 'ready', 64],
+
+    ['json-to-typescript', 'JSON 转 TypeScript', 'developer',
+      '根据 JSON 样例推导并生成 TypeScript 类型定义。',
+      ['json', 'typescript', '类型'], 'suspended', 68],
+
+    ['markdown-to-html', 'Markdown 转 HTML', 'developer',
+      '把 Markdown 转成干净的语义化 HTML，支持 GFM、实时预览、Tailwind 工具类输出与一键下载。',
+      ['markdown', 'html', '转换', 'gfm'], 'ready', 56],
+
+    /* ---- 安全 ---------------------------------------------------------- */
+    ['base64', 'Base64 编解码', 'security',
+      '文本与文件的 Base64 互转，支持 URL 安全字符集。',
+      ['base64', '编码', '解码'], 'planned', 94],
+
+    ['hash-generator', '哈希摘要生成', 'security',
+      '计算 MD5、SHA-1、SHA-256、SHA-512 摘要，可同时输出多种算法结果。',
+      ['hash', 'sha256', 'md5', '摘要'], 'planned', 86],
+
+    ['jwt-decoder', 'JWT 解码', 'security',
+      '解析 JWT 的头部与载荷，友好展示过期时间与常见声明（不校验签名）。',
+      ['jwt', 'token', '解码'], 'planned', 84],
+
+    ['url-encoder', 'URL 编解码', 'security',
+      '对 URL、查询参数与组件进行百分号编码或解码。',
+      ['url', '编码', 'encodeURIComponent'], 'planned', 76],
+
+    ['hmac-generator', 'HMAC 生成', 'security',
+      '用指定密钥计算 HMAC 消息认证码，支持 SHA 系列算法。',
+      ['hmac', '密钥', '签名'], 'planned', 62],
+
+    ['password-strength', '密码强度检测', 'security',
+      '估算密码熵值、字符空间与离线破解耗时，给出改进建议。',
+      ['密码', '强度', '熵'], 'planned', 60],
+
+    ['totp-generator', 'TOTP 动态口令', 'security',
+      '根据 Base32 密钥生成 6/8 位动态口令，并显示剩余有效时间。',
+      ['totp', '2fa', '动态口令'], 'planned', 58],
+
+    ['cert-decoder', 'X.509 证书解码', 'security',
+      '解析证书的颁发者、主体、有效期、SAN 与指纹信息。',
+      ['证书', 'x509', 'ssl'], 'planned', 40],
+
+    /* ---- 颜色 ---------------------------------------------------------- */
+    ['color-converter', '颜色格式转换', 'color',
+      '输入任意格式的颜色，一次得到 HEX、RGB、HSL、CMYK、HWB 五种写法，支持透明度并找出最接近的 CSS 颜色名。',
+      ['hex', 'rgb', 'hsl', 'hwb', 'cmyk'], 'ready', 80],
+
+    ['contrast-checker', '对比度检查', 'color',
+      '按 WCAG 2.2 计算前景背景对比度，判定 AA / AAA 四档标准，附多字号真实预览、一键把前景色调整到达标，以及一组配色的批量检查。',
+      ['对比度', 'wcag', '无障碍', '批量'], 'ready', 70],
+
+    ['palette-generator', '调色板生成', 'color',
+      '从一个主色生成互补、类似、三角等六种协调配色方案与 11 级明暗色阶，可导出 CSS 变量、SCSS、Tailwind 与 JSON。',
+      ['调色板', '配色', 'palette', '色阶'], 'ready', 66],
+
+    ['color-picker', '取色器', 'color',
+      '系统取色盘与屏幕吸管取色，一键复制 HEX / RGB / HSL / CMYK，附明暗色阶与 WCAG 对比度检查。',
+      ['取色', '吸管', 'hex', '对比度'], 'ready', 64],
+
+    ['gradient-generator', '渐变生成器', 'color',
+      '可视化编辑线性、径向、圆锥三种 CSS 渐变，增删色标、调角度与重复，实时预览并一键复制代码，附 10 套预设。',
+      ['渐变', 'gradient', 'css', '预设'], 'ready', 58],
+
+    ['color-blender', '颜色混合', 'color',
+      '按正片叠底、滤色、叠加等 16 种混合模式计算两色叠加的结果，或生成两色之间的过渡色阶，支持 RGB / HSL 两种插值空间。',
+      ['混合', 'blend', '正片叠底', '过渡色阶'], 'ready', 38],
+
+    /* ---- 转换 ---------------------------------------------------------- */
+    ['timestamp-converter', '时间戳转换', 'converters',
+      'Unix 时间戳与日期时间互转，支持秒/毫秒与多时区显示。',
+      ['时间戳', 'unix', '时区'], 'planned', 88],
+
+    ['base-converter', '进制转换', 'converters',
+      '二、八、十、十六进制互转，支持任意 2–36 进制与大整数。',
+      ['进制', '二进制', '十六进制'], 'planned', 68],
+
+    ['unit-converter', '单位换算', 'converters',
+      '长度、重量、面积、体积、温度、数据存储等常用单位换算。',
+      ['单位', '换算', '度量'], 'planned', 62],
+
+    ['image-compressor', '图片压缩', 'converters',
+      '在本地压缩 JPG / PNG / WebP，实时对比压缩前后体积。',
+      ['图片', '压缩', 'webp'], 'planned', 74],
+
+    ['image-to-base64', '图片转 Base64', 'converters',
+      '把图片转成 Data URL，方便直接内联进 HTML 或 CSS。',
+      ['图片', 'base64', 'dataurl'], 'planned', 56],
+
+    ['number-formatter', '数字格式化', 'converters',
+      '千分位、科学计数法、货币与百分比格式化，支持自定义精度。',
+      ['数字', '千分位', '格式化'], 'planned', 46],
+
+    /* ---- 生成器 -------------------------------------------------------- */
+    ['password-generator', '密码生成器', 'generators',
+      '自定义字符集与长度批量生成强密码，用密码学安全随机源。',
+      ['密码', '随机', '安全'], 'planned', 84],
+
+    ['uuid-generator', 'UUID 生成器', 'generators',
+      '批量生成 UUID v4 / v7，支持大写、去横线与自定义数量。',
+      ['uuid', 'guid', '随机'], 'planned', 78],
+
+    ['qr-generator', '二维码生成', 'generators',
+      '把网址、文本、WiFi、名片、邮件、短信、电话、WhatsApp、位置或日程生成二维码，可调纠错等级、样式与配色，支持中心 Logo 与 PNG / SVG 导出。',
+      ['二维码', 'qr', 'wifi', '名片'], 'ready', 72],
+
+    ['lorem-ipsum', '占位文本生成', 'generators',
+      '生成中英文占位段落、句子或单词，用于排版预览。',
+      ['占位', 'lorem', '假文'], 'planned', 50],
+
+    ['random-string', '随机字符串', 'generators',
+      '按指定字符集与长度生成随机串，适合做 ID、token 与盐值。',
+      ['随机', 'token', '字符串'], 'planned', 44],
+
+    ['mock-data', '测试数据生成', 'generators',
+      '批量生成姓名、手机号、邮箱、地址等假数据，可导出 CSV。',
+      ['测试数据', 'mock', '假数据'], 'planned', 48]
+  ];
+
+  /* --- 组装为对象 -------------------------------------------------------- */
+  var STATUS = { ready: '已上线', planned: '规划中', suspended: '已挂起' };
+
+  var tools = TOOLS.map(function (row) {
+    return {
+      slug: row[0],
+      name: row[1],
+      hub: row[2],
+      desc: row[3],
+      tags: row[4] || [],
+      status: row[5] || 'planned',
+      hot: row[6] || 0,
+      path: 'tools/' + row[0] + '/',
+      statusLabel: STATUS[row[5]] || '规划中'
+    };
+  });
+
+  var hubMap = {};
+  HUBS.forEach(function (h) { hubMap[h.id] = h; });
+
+  /* 每个分类下挂上工具，便于渲染 */
+  HUBS.forEach(function (h) {
+    h.tools = tools.filter(function (t) { return t.hub === h.id; });
+    h.readyCount = h.tools.filter(function (t) { return t.status === 'ready'; }).length;
+    h.totalCount = h.tools.length;
+  });
+
+  /* --- 工具函数 ---------------------------------------------------------- */
+  function svg(iconKey, extraClass) {
+    var inner = ICONS[iconKey] || ICONS.bolt;
+    return '<svg class="' + (extraClass || '') + '" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
+  }
+
+  function readyTools() {
+    return tools.filter(function (t) { return t.status === 'ready'; });
+  }
+
+  function sortByHot(list) {
+    return list.slice().sort(function (a, b) {
+      if (b.hot !== a.hot) return b.hot - a.hot;
+      return a.name.localeCompare(b.name, 'zh-Hans-CN');
+    });
+  }
+
+  window.TOOLBOX = {
+    site: SITE,
+    icons: ICONS,
+    hubs: HUBS,
+    hubMap: hubMap,
+    tools: tools,
+    readyTools: readyTools,
+    sortByHot: sortByHot,
+    svg: svg
+  };
+})();

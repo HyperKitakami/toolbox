@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>取色器 · 工具箱</title>
+<meta name="description" content="在线取色器：用系统取色盘选色，或粘贴 HEX / RGB / HSL / 颜色名，一键复制任意格式的色值，并附带明暗色阶与 WCAG 对比度检查。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/site.css">
+<link rel="stylesheet" href="../../css/tool.css">
+<script src="../../js/theme-init.js"></script>
+</head>
+<body data-tool="color-picker" data-hub="color">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/color/">颜色</a>
+      <span class="sep">/</span>
+      <span aria-current="page">取色器</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>取色器</h1>
+        <p class="lead">
+          用系统取色盘选色，或直接粘贴一个颜色值。HEX、RGB、HSL、CMYK 四种格式点一下就能复制，
+          下面还给出明暗色阶和 WCAG 对比度检查。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">对比度检查</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="tool-body">
+
+        <!-- 1. 选色 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">选色</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="cp-eyedrop" hidden>从屏幕取色</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="toolbar">
+              <input type="color" class="color-input" id="cp-picker" value="#6c5ce7"
+                     aria-label="用系统取色盘选色">
+              <input class="input input--mono input--grow" type="text" id="cp-hex" value="#6c5ce7"
+                     placeholder="#6c5ce7 或 rgb(108,92,231)" spellcheck="false"
+                     autocomplete="off" autocapitalize="off" aria-label="颜色值">
+            </div>
+
+            <div class="color-swatch" id="cp-swatch" role="img" aria-label="颜色预览"></div>
+
+            <div class="value-list" id="cp-values"></div>
+          </div>
+          <div class="panel-foot">
+            <span>点击任意一行即可复制该格式的色值</span>
+          </div>
+        </section>
+
+        <!-- 2. 明暗色阶 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">明暗色阶</span>
+          </div>
+          <div class="panel-body">
+            <div class="shades-strip" id="cp-shades"></div>
+          </div>
+          <div class="panel-foot">
+            <span>左半是逐步加白的浅色，右半是逐步加黑的深色；点任一块即可切换</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 3. 对比度 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">对比度检查</span>
+          <div class="panel-actions">
+            <span class="badge" id="cp-ratio">—</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="toolbar">
+            <span class="toolbar-label">前景</span>
+            <span class="value-text" id="cp-fg">#6c5ce7</span>
+            <span class="toolbar-sep"></span>
+            <label class="toolbar-label" for="cp-bg">背景</label>
+            <input type="color" class="color-input" id="cp-bg" value="#ffffff" aria-label="背景色">
+            <input class="input input--mono input--grow" type="text" id="cp-bg-text" value="#ffffff"
+                   spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="背景色值">
+            <button class="btn btn--sm" type="button" id="cp-swap">交换前景背景</button>
+          </div>
+
+          <div class="contrast-preview" id="cp-preview">
+            <p>这段文字用来预览前景色与背景色的搭配效果，正文用 16px 常规字重。</p>
+            <p class="contrast-large">大号文字示例</p>
+          </div>
+
+          <div class="contrast-badges" id="cp-badges"></div>
+        </div>
+        <div class="panel-foot">
+          <span>按 WCAG 2.2 计算；正文阈值 4.5:1，大字（≥18.66px 粗体或 ≥24px）阈值 3:1</span>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>支持的颜色格式</h3>
+        <ul>
+          <li>十六进制：<code class="mono">#6c5ce7</code>、<code class="mono">#abc</code>（三位简写）、<code class="mono">#6c5ce7ff</code>（忽略透明度）。</li>
+          <li>函数式：<code class="mono">rgb(108,92,231)</code>、<code class="mono">rgb(108 92 231)</code>、<code class="mono">hsl(247,75%,63%)</code>、<code class="mono">rgba(...)</code>。</li>
+          <li>颜色名：<code class="mono">tomato</code>、<code class="mono">rebeccapurple</code> 之类，由浏览器自己解析。</li>
+          <li>输入框解析不了时会标红，不会静默按黑色处理。</li>
+          <li>HSL 与 CMYK 按整数显示，所以把显示出来的 <code class="mono">hsl(247, 74%, 63%)</code> 粘回去，
+            得到的 RGB 可能有 ±1 的偏差（<code class="mono">#6b5be6</code> 而非 <code class="mono">#6c5ce7</code>）——
+            取整导致的，属正常范围；要精确复制请用 HEX 或 RGB。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>关于对比度</h3>
+        <ul>
+          <li>相对亮度按 WCAG 2.2 的公式计算（sRGB 分段的阈值取 0.04045）。</li>
+          <li>四档标准：AA 正文 ≥ 4.5、AA 大字 ≥ 3、AAA 正文 ≥ 7、AAA 大字 ≥ 4.5。</li>
+          <li>对比度只看亮度，不看色相，所以红配绿也可能有很高的对比度。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>从屏幕取色</h3>
+        <p>
+          这个按钮用的是浏览器的 <code class="mono">EyeDropper</code> API，
+          可以从屏幕上任意位置吸色（包括页面之外）。目前只有 Chromium 系浏览器支持，
+          其他浏览器不会显示这个按钮，用系统取色盘或手动粘贴色值即可。
+        </p>
+      </div>
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <p>
+          本工具的功能设计与交互移植自
+          <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+          的 Color Picker 与 <code class="mono">js/color-utils.js</code>（MIT 许可），
+          在此做了中文化、界面统一，并为色值解析补上校验与浏览器兜底。详见
+          <code class="mono">THIRD-PARTY.md</code>。
+        </p>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+        <a href="../../sitemap.xml">站点地图</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js" defer></script>
+<script src="../../js/color-utils.js" defer></script>
+<script src="../../js/site.js" defer></script>
+<script src="../../js/tools/color-picker.js" defer></script>
+</body>
+</html>

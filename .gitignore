@@ -1,0 +1,16 @@
+# 依赖
+# jsdom 只有测试需要，站点本身零依赖，所以这里本来就不该有 node_modules
+node_modules/
+
+# 暂存目录：放待整合的外部文件，不属于本站点
+.temporary/
+
+# 助手工作区的日志（同目录下的 skills/ 保留 —— 那是项目知识）
+.workbuddy-ai/memory/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~

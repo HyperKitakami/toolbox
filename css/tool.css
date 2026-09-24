@@ -1,0 +1,1510 @@
+/* ==========================================================================
+   tool.css — 工具页专用骨架
+   每个工具页都应复用这里的结构，保证全站 UI 统一。
+   页面结构见 tools/_template/index.html
+   ========================================================================== */
+
+.tool-page {
+  padding: 28px 0 64px;
+}
+
+/* 工具页里相邻区块的统一间距（比到处写 inline margin-top 干净） */
+.tool-stack > * + * { margin-top: 18px; }
+
+/* --- 1. 面包屑 ----------------------------------------------------------- */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: .8rem;
+  color: var(--text-faint);
+  margin-bottom: 20px;
+}
+.breadcrumb a { color: var(--text-muted); }
+.breadcrumb a:hover { color: var(--accent); }
+.breadcrumb .sep { opacity: .55; }
+.breadcrumb [aria-current] { color: var(--text); font-weight: 550; }
+
+/* --- 2. 工具页头部 ------------------------------------------------------- */
+.tool-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding-bottom: 22px;
+  margin-bottom: 26px;
+  border-bottom: 1px solid var(--border);
+}
+.tool-head-icon {
+  width: 46px; height: 46px;
+  border-radius: 13px;
+  display: grid; place-items: center;
+  flex: none;
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 14%, transparent);
+  color: var(--hub-accent, var(--accent));
+}
+.tool-head-icon svg { width: 24px; height: 24px; }
+.tool-head-text { min-width: 0; flex: 1; }
+.tool-head h1 { margin-bottom: 7px; font-size: clamp(1.5rem, 1.2rem + 1vw, 1.95rem); }
+.tool-head .lead { font-size: .95rem; max-width: 68ch; }
+.tool-head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+/* --- 3. 工具主体布局 ----------------------------------------------------- */
+.tool-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .tool-body { grid-template-columns: 1fr; }
+}
+
+/* 单栏（全宽）工具：如 diff 对比、正则测试 */
+.tool-body--stack { grid-template-columns: 1fr; }
+
+/* 输入窄、输出宽 */
+.tool-body--aside { grid-template-columns: minmax(260px, 340px) 1fr; }
+@media (max-width: 900px) {
+  .tool-body--aside { grid-template-columns: 1fr; }
+}
+
+/* --- 4. 面板 ------------------------------------------------------------- */
+.panel {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  min-height: 46px;
+}
+.panel-title {
+  font-size: .82rem;
+  font-weight: 680;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.panel-body { padding: 14px; }
+.panel-body--flush { padding: 0; }
+.panel-foot {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: .8rem;
+  color: var(--text-faint);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+/* 面板内的裸输入框：去掉自身描边，贴合面板 */
+.panel-body > .textarea,
+.panel-body > .input,
+.panel-body > .select {
+  border-color: transparent;
+  background: transparent;
+}
+.panel-body > .textarea:focus,
+.panel-body > .input:focus,
+.panel-body > .select:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+/* --- 5. 统计结果网格 ----------------------------------------------------- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  padding: 13px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.stat-label {
+  font-size: .76rem;
+  color: var(--text-faint);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 660;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.stat-value--sm { font-size: 1rem; font-weight: 600; }
+.stat-value--ok     { color: var(--ok); }
+.stat-value--danger { color: var(--danger); }
+.stat-value--warn   { color: var(--warn); }
+
+/* --- 6. 输出区 ----------------------------------------------------------- */
+.output {
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 120px;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  color: var(--text);
+  margin: 0;
+}
+
+.output:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+  font-family: var(--font-sans);
+}
+
+/* --- 7. 工具内工具栏 ----------------------------------------------------- */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.toolbar-group label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.toolbar-sep { flex: 1; }
+
+/* --- 8. 复制按钮状态 ----------------------------------------------------- */
+.btn[data-copied="true"] {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--border));
+}
+
+/* --- 9. 工具页底部说明 --------------------------------------------------- */
+.tool-notes {
+  margin-top: 34px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+.tool-note h3 {
+  font-size: .82rem;
+  font-weight: 680;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 9px;
+}
+.tool-note p, .tool-note li {
+  font-size: .875rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+.tool-note ul { padding-left: 1.15em; }
+.tool-note li + li { margin-top: 5px; }
+
+/* --- 10. 相关工具 -------------------------------------------------------- */
+.related {
+  margin-top: 40px;
+}
+.related h2 { font-size: 1.05rem; margin-bottom: 14px; }
+.related .tool-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+
+/* --- 11. 键盘操作提示 ---------------------------------------------------- */
+kbd.hint-key {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  font-family: var(--font-mono);
+  font-size: .78em;
+  color: var(--text-muted);
+}
+
+/* --- 12. 词频 / 排行列表 ------------------------------------------------- */
+.freq-list {
+  list-style: none;
+  display: grid;
+  gap: 7px;
+}
+.freq-item {
+  display: grid;
+  grid-template-columns: minmax(64px, 24%) 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.freq-word {
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.freq-bar {
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+.freq-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--hub-accent, var(--accent));
+}
+.freq-count {
+  min-width: 2.6em;
+  text-align: right;
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+.freq-empty {
+  padding: 18px 0;
+  text-align: center;
+  font-size: .85rem;
+  color: var(--text-faint);
+}
+
+/* --- 13. 差异对比 -------------------------------------------------------- */
+.toolbar-group input[type="checkbox"],
+.toolbar-group input[type="radio"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.diff-view {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: .815rem;
+  line-height: 1.7;
+  max-height: 62vh;
+  overflow: auto;
+}
+
+.diff-view--unified .diff-row { display: grid; grid-template-columns: 46px 46px 22px 1fr; }
+.diff-view--split   .diff-row { display: grid; grid-template-columns: 50px 1fr 50px 1fr; }
+
+.diff-row + .diff-row { border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent); }
+
+.diff-no {
+  min-width: 0;
+  padding: 0 9px;
+  text-align: right;
+  color: var(--text-faint);
+  font-size: .76rem;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-2);
+  border-right: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  user-select: none;
+  overflow: hidden;
+}
+
+.diff-sign {
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  user-select: none;
+}
+
+.diff-cell {
+  min-width: 0;
+  min-height: 1.7em;
+  padding: 0 10px;
+  white-space: pre;
+}
+.diff-view--wrap .diff-cell { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* 统一视图整行配色 */
+.diff-row--del { background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.diff-row--add { background: color-mix(in srgb, var(--ok) 8%, transparent); }
+.diff-row--del .diff-sign { color: var(--danger); }
+.diff-row--add .diff-sign { color: var(--ok); }
+
+/* 并排视图按单元格配色 */
+.diff-cell--del { background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.diff-cell--add { background: color-mix(in srgb, var(--ok) 8%, transparent); }
+.diff-cell--empty {
+  background-image: repeating-linear-gradient(45deg,
+    transparent 0 5px,
+    color-mix(in srgb, var(--border) 60%, transparent) 5px 6px);
+}
+
+/* 行内字符级高亮 */
+.diff-view mark { padding: 0 1px; border-radius: 2px; color: inherit; }
+.diff-view mark.d-del { background: color-mix(in srgb, var(--danger) 30%, transparent); }
+.diff-view mark.d-add { background: color-mix(in srgb, var(--ok) 30%, transparent); }
+
+/* 折叠的相同块 */
+.diff-collapse {
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.diff-expand {
+  display: block;
+  width: 100%;
+  padding: 3px 12px;
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: .78rem;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.diff-expand:hover { color: var(--accent); background: var(--accent-soft); }
+
+/* 空状态 / 一致提示 */
+.diff-hint {
+  padding: 44px 20px;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: .9rem;
+  color: var(--text-muted);
+}
+.diff-hint strong { display: block; color: var(--text); margin-bottom: 5px; font-size: .95rem; }
+
+/* --- 14. 正则表达式测试 -------------------------------------------------- */
+/* 14a. /pattern/flags 输入行 */
+.regex-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.regex-delim {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  color: var(--text-faint);
+  user-select: none;
+}
+.regex-field .input {
+  flex: 1;
+  min-width: 200px;
+  font-family: var(--font-mono);
+  font-size: .875rem;
+}
+.regex-field .input--flags {
+  flex: none;
+  width: 96px;
+  min-width: 0;
+  text-align: center;
+  letter-spacing: .12em;
+}
+
+/* 14b. 标志快捷开关 */
+.regex-flags-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.flag-chip {
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  transition: background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease);
+}
+.flag-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.flag-chip[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 16%, transparent);
+  border-color: color-mix(in srgb, var(--hub-accent, var(--accent)) 45%, var(--border));
+  color: var(--hub-accent, var(--accent));
+  font-weight: 650;
+}
+
+/* 14c. 状态行（各工具共用） */
+.tool-status {
+  margin-top: 12px;
+  min-height: 1.5em;
+  font-size: .85rem;
+  color: var(--text-faint);
+}
+.tool-status .is-ok    { color: var(--ok);     font-weight: 600; }
+.tool-status .is-error { color: var(--danger); font-weight: 600; }
+.tool-status .is-warn  { color: var(--warn);   font-weight: 600; }
+
+/* 报错时附带的原始英文信息 */
+.err-raw {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  color: var(--text-faint);
+}
+
+/* 14d. 高亮结果里的命中标记 */
+.stat-grid + .output { margin-top: 14px; }
+.output mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  color: inherit;
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 26%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--hub-accent, var(--accent)) 55%, transparent);
+}
+
+/* 14e. 模式解释（逐记号拆解） */
+.regex-explainer {
+  display: grid;
+  gap: 2px;
+  max-height: 46vh;
+  overflow: auto;
+}
+.regex-explainer-row {
+  display: grid;
+  grid-template-columns: minmax(64px, max-content) 1fr;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  font-size: .82rem;
+}
+.regex-explainer-row:nth-child(odd) { background: var(--surface-2); }
+.regex-explainer-code {
+  justify-self: start;
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  color: var(--hub-accent, var(--accent));
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  white-space: pre;
+}
+.regex-explainer-label { color: var(--text-muted); }
+.regex-explainer-row.unrecognized .regex-explainer-code,
+.regex-explainer-row.unrecognized .regex-explainer-label { color: var(--danger); }
+
+/* 嵌套层级：逐级缩进 */
+.regex-explainer-row.depth-1 { margin-left: 14px; }
+.regex-explainer-row.depth-2 { margin-left: 28px; }
+.regex-explainer-row.depth-3 { margin-left: 42px; }
+.regex-explainer-row.depth-4 { margin-left: 56px; }
+.regex-explainer-row.depth-5 { margin-left: 70px; }
+.regex-explainer-row.depth-6 { margin-left: 84px; }
+
+/* 空状态提示的排版见第 19 节 */
+
+/* 14f. 匹配详情列表 */
+.match-list {
+  display: grid;
+  gap: 6px;
+  max-height: 46vh;
+  overflow: auto;
+}
+.match-item {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 11px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: .82rem;
+}
+.match-num {
+  flex: none;
+  min-width: 2.4em;
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  color: var(--text-faint);
+}
+.match-text {
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 14%, transparent);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  overflow-wrap: anywhere;
+}
+.match-pos { color: var(--text-faint); font-size: .78rem; }
+.match-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  width: 100%;
+}
+.match-group {
+  padding: 1px 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  overflow-wrap: anywhere;
+}
+
+/* 14g. 语法速查表 */
+.regex-ref {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px 24px;
+}
+.regex-ref-group h4 {
+  margin-bottom: 8px;
+  font-size: .78rem;
+  font-weight: 680;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.regex-ref-group dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 5px 10px;
+  align-items: baseline;
+}
+.regex-ref-group dt {
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+.regex-ref-group dd {
+  margin: 0;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+/* --- 15. 代码视图（JSON / HTML / 后续 YAML、XML 共用） ------------------- */
+/* 结构：.code-view > .code-line > (.code-line-num + .code-line-body)
+   记号：.tok-key .tok-str .tok-num .tok-bool .tok-tag .tok-attr .tok-comment
+   颜色来自 base.css 的 --syn-* 令牌，改配色只改那一处。 */
+.toolbar-label {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+.select--inline {
+  display: inline-block;
+  width: auto;
+  padding: 5px 30px 5px 10px;
+  font-size: .82rem;
+}
+
+.code-view {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: .815rem;
+  line-height: 1.7;
+  max-height: 62vh;
+  overflow: auto;
+  padding: 8px 0;
+}
+
+.code-line {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+}
+.code-line:hover { background: var(--surface-2); }
+
+.code-line-num {
+  padding: 0 10px;
+  text-align: right;
+  font-size: .76rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  border-right: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  user-select: none;
+}
+
+.code-line-body {
+  min-width: 0;
+  padding: 0 12px;
+  white-space: pre;
+}
+.code-view--wrap .code-line-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* 记号着色（颜色统一来自 base.css 的 --syn-* 令牌） */
+.tok-key     { color: var(--syn-key); }
+.tok-str     { color: var(--syn-str); }
+.tok-num     { color: var(--syn-num); }
+.tok-bool    { color: var(--syn-bool); }
+.tok-tag     { color: var(--syn-tag); }
+.tok-attr    { color: var(--syn-attr); }
+.tok-comment { color: var(--syn-comment); font-style: italic; }
+
+
+/* --- 16. Markdown 渲染结果（Markdown 转 HTML / 后续 Markdown 预览共用） -- */
+.md-preview {
+  max-height: 62vh;
+  overflow: auto;
+  padding: 20px 22px;
+  font-size: .95rem;
+  line-height: 1.75;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+.md-preview > *:first-child { margin-top: 0; }
+.md-preview > *:last-child { margin-bottom: 0; }
+
+.md-preview h1, .md-preview h2, .md-preview h3,
+.md-preview h4, .md-preview h5, .md-preview h6 {
+  margin: 1.6em 0 .6em;
+  line-height: 1.3;
+  letter-spacing: -.015em;
+}
+.md-preview h1 { font-size: 1.7rem;  padding-bottom: .3em;  border-bottom: 1px solid var(--border); }
+.md-preview h2 { font-size: 1.35rem; padding-bottom: .25em; border-bottom: 1px solid var(--border); }
+.md-preview h3 { font-size: 1.13rem; }
+.md-preview h4 { font-size: 1rem; }
+.md-preview h5 { font-size: .92rem; }
+.md-preview h6 { font-size: .88rem; color: var(--text-muted); }
+
+.md-preview p { margin: 0 0 1em; }
+
+.md-preview a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+.md-preview ul, .md-preview ol { margin: 0 0 1em; padding-left: 1.5em; }
+.md-preview li + li { margin-top: .3em; }
+.md-preview li > ul, .md-preview li > ol { margin: .3em 0 0; }
+
+/* GFM 任务列表 */
+.md-preview li.task-list-item { list-style: none; margin-left: -1.35em; }
+.md-preview input[type="checkbox"] { margin-right: .5em; accent-color: var(--accent); }
+
+.md-preview blockquote {
+  margin: 0 0 1em;
+  padding: .1em 0 .1em 1em;
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+.md-preview code {
+  padding: .15em .4em;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  font-family: var(--font-mono);
+  font-size: .86em;
+}
+.md-preview pre {
+  margin: 0 0 1em;
+  padding: 13px 15px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  overflow: auto;
+}
+.md-preview pre code {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: .84rem;
+  line-height: 1.65;
+}
+
+.md-preview table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 1em;
+  border-collapse: collapse;
+  overflow-x: auto;
+  font-size: .9rem;
+}
+.md-preview th, .md-preview td {
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.md-preview thead th { background: var(--surface-2); font-weight: 650; }
+
+.md-preview hr {
+  margin: 1.8em 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.md-preview img { max-width: 100%; height: auto; border-radius: var(--r); }
+.md-preview del { color: var(--text-faint); }
+
+.md-preview kbd {
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  background: var(--bg-subtle);
+  font-family: var(--font-mono);
+  font-size: .82em;
+}
+
+.md-preview details {
+  margin: 0 0 1em;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.md-preview summary { cursor: pointer; font-weight: 600; }
+
+/* --- 17. 数据表格与文件拖放（CSV 查看器） -------------------------------- */
+.panel-body > .toolbar    { margin-top: 14px; }
+.panel-body > .drop-zone  { margin-top: 12px; }
+
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 20px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.drop-zone:hover,
+.drop-zone:focus-visible,
+.drop-zone--active {
+  border-color: var(--hub-accent, var(--accent));
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 6%, transparent);
+}
+.drop-zone svg { width: 22px; height: 22px; color: var(--text-faint); }
+.drop-zone p { margin: 0; font-size: .85rem; color: var(--text-muted); }
+.drop-zone strong { color: var(--text); font-weight: 600; }
+
+.table-scroll {
+  border-top: 1px solid var(--border);
+  max-height: 62vh;
+  overflow: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .845rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.data-table th:last-child,
+.data-table td:last-child { border-right: none; }
+
+/* 表头吸顶 */
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text);
+  font-weight: 650;
+  user-select: none;
+}
+.data-table thead th[data-col] { cursor: pointer; }
+.data-table thead th[data-col]:hover { background: var(--bg-inset); }
+.data-table thead th.sort-asc::after  { content: " ↑"; color: var(--hub-accent, var(--accent)); }
+.data-table thead th.sort-desc::after { content: " ↓"; color: var(--hub-accent, var(--accent)); }
+
+/* 行号列 */
+.data-table .row-num {
+  width: 1%;
+  color: var(--text-faint);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+.data-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 6%, transparent);
+}
+.data-table tbody tr:hover .row-num { background: var(--surface-2); }
+
+/* 表格里的空状态 */
+
+/* --- 18. 文档大纲（Markdown 预览） -------------------------------------- */
+.outline-list {
+  display: grid;
+  gap: 1px;
+  max-height: 46vh;
+  overflow: auto;
+}
+
+.outline-item {
+  display: block;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text-muted);
+  font-size: .84rem;
+  line-height: 1.5;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.outline-item:hover { background: var(--bg-inset); color: var(--text); }
+.outline-item--l1 { font-weight: 650; color: var(--text); }
+.outline-item--l2 { padding-left: 22px; }
+.outline-item--l3 { padding-left: 34px; font-size: .81rem; }
+.outline-item--l4 { padding-left: 46px; font-size: .81rem; }
+.outline-item--l5 { padding-left: 58px; font-size: .78rem; }
+.outline-item--l6 { padding-left: 70px; font-size: .78rem; }
+
+
+/* 预览里的标题在被大纲跳转时给一点提示 */
+.md-preview :is(h1, h2, h3, h4, h5, h6) { scroll-margin-top: 8px; }
+
+/* --- 19. 各容器里的空状态提示（共用排版） ------------------------------- */
+/* 用在哪：.code-empty（代码视图）、.table-empty（表格）、.outline-empty（大纲）、
+   .match-empty（匹配列表）、.regex-explainer-empty（模式解释）、.md-empty（预览） */
+.code-empty,
+.table-empty,
+.outline-empty,
+.match-empty,
+.regex-explainer-empty,
+.md-empty {
+  padding: 30px 14px;
+  text-align: center;
+  font-size: .88rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+.code-empty strong,
+.table-empty strong,
+.md-empty strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text);
+  font-size: .95rem;
+}
+
+/* --- 20. 颜色工具（取色器；后续颜色类工具可复用） ------------------------ */
+.color-input {
+  flex: none;
+  width: 52px;
+  height: 42px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  cursor: pointer;
+}
+.color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.color-input::-webkit-color-swatch { border: none; border-radius: calc(var(--r) - 3px); }
+.color-input::-moz-color-swatch { border: none; border-radius: calc(var(--r) - 3px); }
+
+.color-swatch {
+  height: 104px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+/* 可点击复制的色值行 */
+.value-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+}
+.value-row {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  text-align: left;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.value-row:hover { border-color: var(--border-strong); background: var(--surface); }
+.value-label {
+  font-size: .74rem;
+  font-weight: 650;
+  letter-spacing: .04em;
+  color: var(--text-faint);
+}
+.value-text {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: .84rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.value-row[data-copied="true"] {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
+  background: var(--ok-soft);
+}
+.value-row[data-copied="true"] .value-label::after { content: " ✓"; color: var(--ok); }
+
+/* 明暗色阶 */
+.shades-strip {
+  display: grid;
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.shade-swatch {
+  height: 64px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease);
+}
+.shade-swatch:hover { transform: scaleY(1.1); }
+.shade-swatch:focus-visible { outline-offset: -2px; }
+
+/* 对比度预览 */
+.contrast-preview {
+  margin-top: 14px;
+  padding: 22px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.contrast-preview p { margin: 0; font-size: 1rem; line-height: 1.6; }
+.contrast-preview .contrast-large {
+  margin-top: 10px;
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.contrast-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+/* --- 21. 颜色格式转换（透明度滑杆、命名颜色） --------------------------- */
+.range {
+  flex: 1;
+  min-width: 110px;
+  height: 6px;
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--bg-inset);
+  cursor: pointer;
+}
+.range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--hub-accent, var(--accent));
+  box-shadow: var(--shadow-1);
+}
+.range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--hub-accent, var(--accent));
+  box-shadow: var(--shadow-1);
+}
+.range:disabled { opacity: .45; cursor: not-allowed; }
+.range:disabled::-webkit-slider-thumb { background: var(--text-faint); }
+.range:disabled::-moz-range-thumb { background: var(--text-faint); }
+
+/* 右对齐的等宽数值：透明度（颜色格式转换）、步数（颜色混合）等共用 */
+.alpha-value,
+.num-value {
+  min-width: 3.4em;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+/* 最接近的 CSS 命名颜色 */
+.css-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-size: .85rem;
+  color: var(--text-muted);
+}
+.css-name-swatch {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.css-name strong {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: .84rem;
+}
+
+/* --- 22. 颜色类工具共用组件 + 颜色混合 --------------------------------- */
+/* 带标签的输入组，纵向排列。颜色混合与对比度检查共用 */
+.field-stack {
+  display: grid;
+  gap: 12px;
+}
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.field-label .faint { color: var(--text-faint); }
+
+/* 两色预览：左底色、右叠色 */
+.blend-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+.blend-pair-swatch {
+  height: 84px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+/* 切换胶囊组：混合模式、配色方案等共用 */
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.choice-chip {
+  padding: 4px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: .8rem;
+  transition: background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease);
+}
+.choice-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.choice-chip[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 16%, transparent);
+  border-color: color-mix(in srgb, var(--hub-accent, var(--accent)) 45%, var(--border));
+  color: var(--hub-accent, var(--accent));
+  font-weight: 650;
+}
+
+/* 混合结果 */
+.blend-result {
+  height: 104px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+/* 横向色带：过渡色阶、明暗色阶共用。块多了横向滚动，不挤压色块 */
+.color-strip {
+  display: flex;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow-x: auto;
+}
+.color-cell {
+  flex: 1 0 58px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.color-cell-color { display: block; height: 56px; }
+.color-cell-code {
+  display: block;
+  padding: 4px 2px 5px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: .66rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.color-cell:hover .color-cell-code { color: var(--text); }
+.color-cell[data-copied="true"] .color-cell-code {
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-weight: 650;
+}
+
+/* --- 23. 对比度检查（多字号预览、批量结果） ----------------------------- */
+/* 预览区的三行按 WCAG 对「大字」的定义取字号：
+   正文 14px；大字是 18pt（24px），或 14pt（18.66px）以上粗体。 */
+.contrast-preview .cc-line { margin: 0; }
+.contrast-preview .cc-line + .cc-line { margin-top: 10px; }
+.contrast-preview .cc-line--normal { font-size: 14px; line-height: 1.65; }
+.contrast-preview .cc-line--bold   { font-size: 18.66px; font-weight: 700; line-height: 1.5; }
+.contrast-preview .cc-line--large  { font-size: 24px; font-weight: 650; line-height: 1.4; }
+
+.cc-fix {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* 批量检查的结果列表 */
+.batch-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+}
+.batch-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.batch-row--bad {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+  background: var(--danger-soft);
+}
+.batch-swatch {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.batch-swatch--bad {
+  display: grid;
+  place-items: center;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: .8rem;
+  font-weight: 700;
+}
+.batch-hex {
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: .84rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.batch-ratio {
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* --- 24. 调色板生成（配色色块、导出） ----------------------------------- */
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.palette-chip {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: center;
+}
+.palette-chip-color { display: block; height: 72px; }
+.palette-chip-code {
+  display: block;
+  padding: 5px 2px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.palette-chip:hover .palette-chip-code { color: var(--text); }
+.palette-chip[data-copied="true"] .palette-chip-code {
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-weight: 650;
+}
+
+/* 导出按钮组 */
+.palette-export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* --- 25. 渐变生成器（色标编辑、预览、预设） ----------------------------- */
+.color-input--sm {
+  width: 38px;
+  height: 34px;
+  padding: 2px;
+}
+.grad-angle-input {
+  flex: none;
+  width: 84px;
+}
+
+/* 色标列表 */
+.grad-stops {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+.grad-stop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.grad-stop .grad-stop-hex {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 9px;
+  font-size: .82rem;
+}
+.grad-stop .grad-stop-pos {
+  flex: 1 1 80px;
+  min-width: 64px;
+}
+.grad-stop .grad-stop-posval {
+  flex: none;
+  min-width: 2.6em;
+}
+.grad-stop .grad-stop-del {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+/* 预览 */
+.grad-preview {
+  height: 170px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+/* 色标位置轴 */
+.grad-axis {
+  position: relative;
+  height: 10px;
+  margin-top: 10px;
+  border-radius: var(--r-pill);
+  background: var(--bg-inset);
+}
+.grad-axis-mark {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: var(--shadow-1);
+}
+
+/* 代码框（点击复制） */
+.grad-code {
+  display: block;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  line-height: 1.6;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.grad-code:hover { border-color: var(--border-strong); }
+.grad-code[data-copied="true"] {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
+  background: var(--ok-soft);
+}
+
+/* 预设 */
+.grad-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+.grad-preset {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: center;
+}
+.grad-preset-swatch { display: block; height: 52px; }
+.grad-preset-name {
+  display: block;
+  padding: 4px 0 5px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: .72rem;
+  color: var(--text-muted);
+}
+.grad-preset:hover .grad-preset-name { color: var(--text); }
+
+/* --- 26. 二维码生成（内容表单、预览、Logo） ----------------------------- */
+.qr-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.qr-panel[hidden] { display: none; }
+
+/* 预览：SVG 自适应容器，设的尺寸小于容器时按原尺寸显示 */
+.qr-preview {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.qr-preview svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.qr-empty {
+  max-width: 22em;
+  font-size: .85rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  text-align: center;
+}
+.qr-empty strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text);
+  font-size: .95rem;
+}
+
+.qr-status {
+  margin: 12px 0 0;
+  font-size: .82rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.qr-status .is-warn  { color: var(--warn);   font-weight: 650; }
+.qr-status .is-error { color: var(--danger); font-weight: 650; }
+
+/* Logo 上传 */
+.qr-logo { margin-top: 14px; }
+.qr-logo-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 9px;
+  font-size: .82rem;
+}
+.qr-logo-preview {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  object-fit: contain;
+}

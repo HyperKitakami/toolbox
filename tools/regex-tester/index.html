@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>正则表达式测试 · 工具箱</title>
+<meta name="description" content="在线正则表达式测试工具：实时高亮命中结果，逐字拆解表达式含义，列出每个匹配的分组与位置，并支持替换预览。JavaScript 正则引擎，全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/site.css">
+<link rel="stylesheet" href="../../css/tool.css">
+<script src="../../js/theme-init.js"></script>
+</head>
+<body data-tool="regex-tester" data-hub="developer">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/developer/">开发者</a>
+      <span class="sep">/</span>
+      <span aria-current="page">正则表达式测试</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>正则表达式测试</h1>
+        <p class="lead">
+          边写边匹配：实时高亮所有命中位置，逐字拆解表达式每一段的含义，
+          并列出每个匹配的捕获分组与索引。支持替换预览与分享链接。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">JavaScript 引擎</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <!-- 1. 表达式 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">正则表达式</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm" type="button" id="rt-share">复制分享链接</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="regex-field">
+            <span class="regex-delim" aria-hidden="true">/</span>
+            <input class="input" type="text" id="rt-pattern" spellcheck="false" autocomplete="off"
+                   autocapitalize="off" aria-label="正则表达式"
+                   value="[\w.+-]+@[\w-]+(?:\.[\w-]+)+">
+            <span class="regex-delim" aria-hidden="true">/</span>
+            <input class="input input--flags" type="text" id="rt-flags" spellcheck="false" autocomplete="off"
+                   aria-label="标志" value="g">
+          </div>
+
+          <div class="regex-flags-row" id="rt-flag-chips" role="group" aria-label="常用标志"></div>
+
+          <p class="tool-status" id="rt-status" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <!-- 2. 测试文本 + 匹配高亮 -->
+      <div class="tool-body">
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">测试文本</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-demo>载入示例</button>
+              <button class="btn btn--sm" type="button" data-clear>清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <textarea class="textarea" id="rt-text" rows="14" spellcheck="false"
+                      placeholder="在这里粘贴要匹配的文本…">联系邮箱：zhang@example.com
+备用邮箱：li.si@company.org.cn
+无效输入：not-an-email
+订单号：A2026-0924-001</textarea>
+          </div>
+          <div class="panel-foot">
+            <span>输入内容不会离开浏览器</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">匹配高亮</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-copy-target="#rt-highlight">复制结果</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="stat-grid" id="rt-stats"></div>
+            <div class="output" id="rt-highlight" data-placeholder="命中位置会在这里高亮显示"></div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 3. 模式解释 + 匹配详情 -->
+      <div class="tool-body">
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">模式解释</span>
+          </div>
+          <div class="panel-body">
+            <div id="rt-explainer" class="regex-explainer" role="status" aria-live="polite"></div>
+          </div>
+          <div class="panel-foot">
+            <span>按记号逐个拆解，缩进表示分组嵌套层级</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">匹配详情</span>
+          </div>
+          <div class="panel-body">
+            <div id="rt-matches" class="match-list"></div>
+          </div>
+          <div class="panel-foot">
+            <span>$n 为捕获分组，命名分组单独列出；位置为字符索引区间</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 4. 替换 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">替换模式</span>
+          <div class="panel-actions">
+            <label class="switch" for="rt-replace-toggle">
+              <input type="checkbox" id="rt-replace-toggle"> 启用
+            </label>
+          </div>
+        </div>
+        <div class="panel-body" id="rt-replace-section" hidden>
+          <div class="field">
+            <label class="label" for="rt-replacement">替换为</label>
+            <input class="input" type="text" id="rt-replacement" spellcheck="false" autocomplete="off"
+                   placeholder="支持 $1、$2 引用分组，$&amp; 引用整个匹配">
+            <p class="hint">替换规则与 JavaScript 的 <code class="mono">String.replace</code> 一致。</p>
+          </div>
+          <div class="field">
+            <span class="label">替换结果</span>
+            <div class="output" id="rt-replace-output" data-placeholder="启用替换并输入内容后显示"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 语法速查 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">语法速查</span>
+        </div>
+        <div class="panel-body">
+          <div class="regex-ref">
+            <div class="regex-ref-group">
+              <h4>字符</h4>
+              <dl>
+                <dt>.</dt><dd>任意字符（默认不含换行）</dd>
+                <dt>\d</dt><dd>数字 [0-9]</dd>
+                <dt>\w</dt><dd>单词字符 [A-Za-z0-9_]</dd>
+                <dt>\s</dt><dd>空白字符</dd>
+                <dt>\D</dt><dd>非数字</dd>
+                <dt>[abc]</dt><dd>方括号内任一字符</dd>
+                <dt>[^abc]</dt><dd>不在方括号内的字符</dd>
+              </dl>
+            </div>
+            <div class="regex-ref-group">
+              <h4>量词</h4>
+              <dl>
+                <dt>*</dt><dd>0 次或多次</dd>
+                <dt>+</dt><dd>1 次或多次</dd>
+                <dt>?</dt><dd>0 次或 1 次</dd>
+                <dt>{n}</dt><dd>恰好 n 次</dd>
+                <dt>{n,m}</dt><dd>n 到 m 次</dd>
+                <dt>*?</dt><dd>懒惰匹配，尽可能少（不加 ? 即贪婪）</dd>
+              </dl>
+            </div>
+            <div class="regex-ref-group">
+              <h4>位置与分组</h4>
+              <dl>
+                <dt>^</dt><dd>开头（带 m 时为行首）</dd>
+                <dt>$</dt><dd>结尾（带 m 时为行尾）</dd>
+                <dt>\b</dt><dd>单词边界</dd>
+                <dt>(…)</dt><dd>捕获分组</dd>
+                <dt>(?:…)</dt><dd>非捕获分组</dd>
+                <dt>(?&lt;name&gt;…)</dt><dd>命名分组</dd>
+                <dt>a|b</dt><dd>a 或 b</dd>
+              </dl>
+            </div>
+            <div class="regex-ref-group">
+              <h4>标志</h4>
+              <dl>
+                <dt>g</dt><dd>全局匹配，找出全部</dd>
+                <dt>i</dt><dd>忽略大小写</dd>
+                <dt>m</dt><dd>多行模式</dd>
+                <dt>s</dt><dd>点号匹配换行符</dd>
+                <dt>u</dt><dd>Unicode 模式</dd>
+                <dt>y</dt><dd>粘性匹配</dd>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>关于引擎</h3>
+        <ul>
+          <li>使用浏览器内置的 JavaScript 正则引擎（ECMAScript 语法），不是 PCRE 或 Python 的 <code class="mono">re</code>。</li>
+          <li>因此 <code class="mono">(?&lt;name&gt;…)</code>、后行断言、Unicode 属性转义等较新特性都可用，但 PCRE 的 <code class="mono">(?P&lt;name&gt;…)</code> 之类不适用。</li>
+          <li>所有匹配都在本地执行，表达式与文本不会上传。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>匹配规则</h3>
+        <ul>
+          <li>不加 <code class="mono">g</code> 标志时只返回第一个匹配。</li>
+          <li>加上 <code class="mono">g</code> 或 <code class="mono">y</code> 后会遍历全部匹配，最多保留 5000 条。</li>
+          <li>像 <code class="mono">a*</code> 这类可能产生空匹配的表达式，会在空匹配处自动前进一位，避免陷入死循环。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <p>
+          本工具的交互设计与模式解释器移植自
+          <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+          的 Regex Tester &amp; Explainer（MIT 许可），在此做了中文化、界面统一与若干缺陷修复。
+        </p>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+        <a href="../../sitemap.xml">站点地图</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js" defer></script>
+<script src="../../js/site.js" defer></script>
+<script src="../../js/tools/regex-tester.js" defer></script>
+</body>
+</html>

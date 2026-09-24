@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markdown 转 HTML · 工具箱</title>
+<meta name="description" content="把 Markdown（CommonMark 与 GitHub Flavored Markdown）转成干净、语义化的 HTML。支持实时预览、Tailwind 工具类输出、一键复制与下载，全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/site.css">
+<link rel="stylesheet" href="../../css/tool.css">
+<script src="../../js/theme-init.js"></script>
+</head>
+<body data-tool="markdown-to-html" data-hub="developer">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/developer/">开发者</a>
+      <span class="sep">/</span>
+      <span aria-current="page">Markdown 转 HTML</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>Markdown 转 HTML</h1>
+        <p class="lead">
+          左边写 Markdown，右边直接拿到干净的 HTML。支持 CommonMark 与 GitHub Flavored
+          Markdown，可切换代码 / 预览两种视图，输出前会做一次净化。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">GFM</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <!-- 1. 输入 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Markdown</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm" type="button" data-demo>载入示例</button>
+            <button class="btn btn--sm" type="button" data-clear>清空</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <textarea class="textarea" id="md-input" rows="16" spellcheck="false"
+                    placeholder="# 在这里写 Markdown&#10;&#10;支持 **加粗**、*斜体*、`行内代码`、表格与任务列表。"># 工具箱 · Markdown 转 HTML
+
+把 **Markdown** 转成干净、语义化的 *HTML*，可以直接粘到任何地方。
+
+## 支持的语法
+
+- GitHub Flavored Markdown：表格、任务列表、删除线
+- 围栏代码块与行内 `code`
+- 引用、分隔线、图片
+
+### 任务列表
+
+- [x] 实时预览
+- [x] 一键复制 HTML
+- [ ] 加入更多导出格式
+
+> 所有转换都在浏览器里完成，草稿不会上传。
+
+```js
+const box = ['json', 'regex', 'diff'];
+console.log(box.map(t => t.toUpperCase()).join(' / '));
+```
+
+| 功能 | 状态 |
+|------|------|
+| 表格 | 支持 |
+| 任务列表 | 支持 |
+
+1. 左边写 Markdown
+2. 右上切换 HTML / 预览
+3. 点「复制 HTML」带走结果
+
+---
+
+[了解更多](https://example.com)</textarea>
+        </div>
+        <div class="panel-foot">
+          <span>输入内容不会离开浏览器</span>
+          <span id="md-size"></span>
+        </div>
+      </section>
+
+      <!-- 2. 视图与选项 -->
+      <div class="toolbar">
+        <button class="chip" type="button" id="md-tab-code" aria-pressed="true">HTML 代码</button>
+        <button class="chip" type="button" id="md-tab-preview" aria-pressed="false">预览</button>
+        <span class="toolbar-sep"></span>
+        <label class="switch"><input type="checkbox" id="md-tailwind"> Tailwind 工具类</label>
+      </div>
+
+      <p class="tool-status" id="md-status" role="status" aria-live="polite"></p>
+
+      <!-- 3. 输出 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">输出</span>
+          <div class="panel-actions">
+            <span class="badge" id="md-badge">—</span>
+            <button class="btn btn--sm" type="button" data-copy-target="#md-html-text">复制 HTML</button>
+            <button class="btn btn--sm" type="button" id="md-download">下载</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="stat-grid" id="md-stats"></div>
+        </div>
+        <div class="code-view code-view--wrap" id="md-code"></div>
+        <div class="md-preview" id="md-preview" hidden></div>
+        <pre class="sr-only" id="md-html-text"></pre>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>支持的语法</h3>
+        <ul>
+          <li>标题、列表、链接、图片、引用、分隔线。</li>
+          <li>GFM 扩展：表格、任务列表、删除线、围栏代码块。</li>
+          <li>Markdown 里写的原生 HTML 会被保留，但脚本与事件处理器会被剥离。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>关于 Tailwind 选项</h3>
+        <p>
+          Markdown 生成的 HTML 是纯语义标签，本身不带样式。勾选「Tailwind 工具类」后，
+          会给每个元素补上 <code class="mono">text-3xl</code>、<code class="mono">mb-4</code>、
+          <code class="mono">list-disc</code> 这类工具类，方便直接放进 Tailwind 项目。
+          这些类只有在你的项目引入了 Tailwind 之后才会生效；预览区始终显示不带类的语义版本。
+        </p>
+      </div>
+      <div class="tool-note">
+        <h3>草稿保存</h3>
+        <p>
+          编辑器内容会自动保存在浏览器的 <code class="mono">localStorage</code>
+          （键名 <code class="mono">toolbox-md2html</code>），刷新后仍在。
+          这是本工具唯一的本地写入，不包含任何标识信息；点「清空」会同时清掉草稿。
+        </p>
+      </div>
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <p>
+          本工具的功能设计与交互移植自
+          <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+          的 Markdown to HTML（MIT 许可）。Markdown 解析使用
+          <a href="https://github.com/markedjs/marked" target="_blank" rel="noopener">marked</a>（MIT），
+          HTML 净化使用
+          <a href="https://github.com/cure53/DOMPurify" target="_blank" rel="noopener">DOMPurify</a>
+          （Apache-2.0 / MPL-2.0）。详见 <code class="mono">THIRD-PARTY.md</code>。
+        </p>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+        <a href="../../sitemap.xml">站点地图</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/vendor/marked.umd.js" defer></script>
+<script src="../../js/vendor/purify.min.js" defer></script>
+<script src="../../js/registry.js" defer></script>
+<script src="../../js/site.js" defer></script>
+<script src="../../js/tools/markdown-to-html.js" defer></script>
+</body>
+</html>

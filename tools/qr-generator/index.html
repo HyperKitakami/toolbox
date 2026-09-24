@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>二维码生成 · 工具箱</title>
+<meta name="description" content="在线二维码生成器：把网址、文本、WiFi、名片、邮件、短信、电话、WhatsApp、位置、日程生成二维码，可调纠错等级、样式与配色，支持嵌入中心 Logo 并导出 PNG / SVG。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/site.css">
+<link rel="stylesheet" href="../../css/tool.css">
+<script src="../../js/theme-init.js"></script>
+</head>
+<body data-tool="qr-generator" data-hub="generators">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/generators/">生成器</a>
+      <span class="sep">/</span>
+      <span aria-current="page">二维码生成</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>二维码生成</h1>
+        <p class="lead">
+          把网址、一段文本、WiFi 密码、名片、日程生成二维码。纠错等级、样式、配色都能调，
+          还能在中心嵌一个 Logo。导出 PNG 或 SVG，扫一下就能用。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">9 种内容类型</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="tool-body">
+
+        <!-- 左列 -->
+        <div class="tool-stack">
+
+          <!-- 1. 内容 -->
+          <section class="panel">
+            <div class="panel-head">
+              <span class="panel-title">内容</span>
+            </div>
+            <div class="panel-body">
+              <div class="choice-row" id="qr-modes" role="group" aria-label="内容类型"></div>
+
+              <div class="qr-panel" id="qr-panel-text">
+                <div>
+                  <label class="field-label" for="qr-text">文本或网址</label>
+                  <textarea class="textarea" id="qr-text" rows="4" spellcheck="false"
+                            autocomplete="off" autocapitalize="off"
+                            placeholder="https://example.com/">https://example.com/</textarea>
+                </div>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-wifi" hidden>
+                <div>
+                  <label class="field-label" for="qr-wifi-ssid">网络名称 <span class="faint">SSID</span></label>
+                  <input class="input" type="text" id="qr-wifi-ssid" autocomplete="off" placeholder="MyWiFi">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-wifi-enc">加密方式</label>
+                  <select class="select" id="qr-wifi-enc">
+                    <option value="WPA">WPA / WPA2</option>
+                    <option value="WEP">WEP</option>
+                    <option value="nopass">无密码</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="qr-wifi-pass">密码</label>
+                  <input class="input input--mono" type="text" id="qr-wifi-pass" autocomplete="off"
+                         spellcheck="false" placeholder="留空表示无密码">
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="qr-wifi-hidden">
+                  <span>这是隐藏网络</span>
+                </label>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-vcard" hidden>
+                <div>
+                  <label class="field-label" for="qr-vc-name">姓名</label>
+                  <input class="input" type="text" id="qr-vc-name" autocomplete="off">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-vc-phone">电话</label>
+                  <input class="input input--mono" type="text" id="qr-vc-phone" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-vc-email">邮箱</label>
+                  <input class="input input--mono" type="text" id="qr-vc-email" autocomplete="off" spellcheck="false">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-vc-org">组织 <span class="faint">可选</span></label>
+                  <input class="input" type="text" id="qr-vc-org" autocomplete="off">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-vc-url">网址 <span class="faint">可选</span></label>
+                  <input class="input input--mono" type="text" id="qr-vc-url" autocomplete="off" spellcheck="false">
+                </div>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-email" hidden>
+                <div>
+                  <label class="field-label" for="qr-email-to">收件人</label>
+                  <input class="input input--mono" type="text" id="qr-email-to" autocomplete="off"
+                         spellcheck="false" placeholder="hi@example.com">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-email-subject">主题 <span class="faint">可选</span></label>
+                  <input class="input" type="text" id="qr-email-subject" autocomplete="off">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-email-body">正文 <span class="faint">可选</span></label>
+                  <textarea class="textarea" id="qr-email-body" rows="3" autocomplete="off"></textarea>
+                </div>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-sms" hidden>
+                <div>
+                  <label class="field-label" for="qr-sms-to">号码</label>
+                  <input class="input input--mono" type="text" id="qr-sms-to" autocomplete="off"
+                         spellcheck="false" placeholder="13800138000">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-sms-body">短信内容 <span class="faint">可选</span></label>
+                  <textarea class="textarea" id="qr-sms-body" rows="3" autocomplete="off"></textarea>
+                </div>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-phone" hidden>
+                <div>
+                  <label class="field-label" for="qr-phone-to">号码</label>
+                  <input class="input input--mono" type="text" id="qr-phone-to" autocomplete="off"
+                         spellcheck="false" placeholder="13800138000">
+                </div>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-whatsapp" hidden>
+                <div>
+                  <label class="field-label" for="qr-wa-to">号码 <span class="faint">含国家码，可以带 + 和空格</span></label>
+                  <input class="input input--mono" type="text" id="qr-wa-to" autocomplete="off"
+                         spellcheck="false" placeholder="+86 138 0013 8000">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-wa-body">预填消息 <span class="faint">可选</span></label>
+                  <textarea class="textarea" id="qr-wa-body" rows="3" autocomplete="off"></textarea>
+                </div>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-geo" hidden>
+                <div>
+                  <label class="field-label" for="qr-geo-lat">纬度</label>
+                  <input class="input input--mono" type="text" id="qr-geo-lat" autocomplete="off"
+                         spellcheck="false" placeholder="39.9087">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-geo-lng">经度</label>
+                  <input class="input input--mono" type="text" id="qr-geo-lng" autocomplete="off"
+                         spellcheck="false" placeholder="116.3975">
+                </div>
+              </div>
+
+              <div class="qr-panel" id="qr-panel-event" hidden>
+                <div>
+                  <label class="field-label" for="qr-ev-title">标题</label>
+                  <input class="input" type="text" id="qr-ev-title" autocomplete="off">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-ev-location">地点 <span class="faint">可选</span></label>
+                  <input class="input" type="text" id="qr-ev-location" autocomplete="off">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-ev-start">开始</label>
+                  <input class="input input--mono" type="datetime-local" id="qr-ev-start">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-ev-end">结束 <span class="faint">可选</span></label>
+                  <input class="input input--mono" type="datetime-local" id="qr-ev-end">
+                </div>
+                <div>
+                  <label class="field-label" for="qr-ev-desc">说明 <span class="faint">可选</span></label>
+                  <textarea class="textarea" id="qr-ev-desc" rows="2" autocomplete="off"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="panel-foot">
+              <span>内容越长，二维码越密 —— 状态栏里会给出当前的模块数与内容字节数</span>
+            </div>
+          </section>
+
+          <!-- 2. 外观 -->
+          <section class="panel">
+            <div class="panel-head">
+              <span class="panel-title">外观</span>
+            </div>
+            <div class="panel-body">
+              <div class="toolbar">
+                <label class="toolbar-label" for="qr-ec">纠错等级</label>
+                <select class="select select--inline" id="qr-ec" aria-label="纠错等级">
+                  <option value="L">L · 约 7%</option>
+                  <option value="M" selected>M · 约 15%</option>
+                  <option value="Q">Q · 约 25%</option>
+                  <option value="H">H · 约 30%</option>
+                </select>
+
+                <span class="toolbar-sep"></span>
+                <label class="toolbar-label" for="qr-style">样式</label>
+                <select class="select select--inline" id="qr-style" aria-label="模块样式">
+                  <option value="square">方块</option>
+                  <option value="rounded">圆角</option>
+                  <option value="dots">圆点</option>
+                </select>
+              </div>
+
+              <div class="toolbar">
+                <label class="toolbar-label" for="qr-size">尺寸</label>
+                <input type="range" class="range" id="qr-size" min="120" max="640" step="20" value="320"
+                       aria-label="输出尺寸（像素）">
+                <span class="num-value" id="qr-size-value">320</span>
+              </div>
+
+              <div class="toolbar">
+                <label class="toolbar-label" for="qr-fg">前景</label>
+                <input type="color" class="color-input" id="qr-fg" value="#000000" aria-label="前景色">
+                <label class="toolbar-label" for="qr-bg">背景</label>
+                <input type="color" class="color-input" id="qr-bg" value="#ffffff" aria-label="背景色">
+                <span class="toolbar-sep"></span>
+                <button class="btn btn--sm" type="button" id="qr-invert">对调两色</button>
+              </div>
+
+              <div class="qr-logo">
+                <label class="field-label" for="qr-logo">
+                  中心 Logo <span class="faint">可选，加上之后纠错等级会锁到 H</span>
+                </label>
+                <div class="toolbar">
+                  <input class="input qr-logo-input" type="file" id="qr-logo" accept="image/*"
+                         aria-label="选择中心 Logo 图片">
+                  <img class="qr-logo-preview" id="qr-logo-preview" alt="Logo 预览" hidden>
+                  <button class="btn btn--sm" type="button" id="qr-logo-clear" hidden>移除</button>
+                </div>
+              </div>
+            </div>
+            <div class="panel-foot">
+              <span>圆点与圆角样式会把三个定位角保持为实心方块 —— 那是扫描器用来定位的，改圆了会扫不出来</span>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- 右列 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">预览与导出</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="qr-png">下载 PNG</button>
+              <button class="btn btn--sm" type="button" id="qr-svg">下载 SVG</button>
+              <button class="btn btn--sm" type="button" id="qr-copy" hidden>复制图片</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="qr-preview" id="qr-preview"></div>
+            <p class="qr-status" id="qr-status"></p>
+          </div>
+          <div class="panel-foot">
+            <span>预览用的是 SVG，放到多大都不会糊；PNG 按上面设的尺寸导出</span>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>九种内容类型</h3>
+        <p>
+          除了纯文本，二维码还能承载几种带结构的格式，手机相机扫到后会直接给出对应动作：
+        </p>
+        <ul>
+          <li><strong>WiFi</strong> —— 扫一下直接连上网络，不用手打密码。安卓和 iOS 都支持。</li>
+          <li><strong>名片</strong> —— vCard 格式，扫完可以存进通讯录。</li>
+          <li><strong>邮件 / 短信 / 电话</strong> —— 分别对应 <code class="mono">mailto:</code>、
+            <code class="mono">SMSTO:</code>、<code class="mono">tel:</code> 协议，扫完直接打开写信、发短信或拨号。</li>
+          <li><strong>WhatsApp</strong> —— 用 <code class="mono">wa.me</code> 链接，扫完打开与指定号码的对话。</li>
+          <li><strong>位置</strong> —— <code class="mono">geo:</code> 协议，扫完在地图里定位到坐标。</li>
+          <li><strong>日程</strong> —— iCalendar 格式，扫完可以把事件加进日历。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>纠错等级与中心 Logo</h3>
+        <ul>
+          <li>二维码自带冗余：即使有一部分被遮挡或磨损，仍能还原出原始内容。纠错等级就是这个冗余的比例，
+            L 约 7%、M 约 15%、Q 约 25%、H 约 30%。</li>
+          <li>等级越高越耐损，但同样的内容需要更多的模块 —— 二维码会更密，反而更难扫。
+            没有特殊需求时用 M 就够了。</li>
+          <li>要在中心放 Logo 就必须用 H：被 Logo 盖住的部分全靠纠错补回来。
+            所以上传 Logo 后等级会被锁到 H，上传期间不能改。</li>
+          <li>Logo 只在本机读取，不会上传到任何地方。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>扫不出来的常见原因</h3>
+        <ul>
+          <li><strong>前景比背景暗才对</strong>。反色的二维码（浅色模块配深色底）很多扫描器读不出来 ——
+            这是历史实现问题，不是规范要求。界面上会给出提示。</li>
+          <li><strong>对比度太低</strong>。前景与背景的相对亮度差不到 3:1 时，相机在弱光下基本扫不出来。</li>
+          <li><strong>四周的留白被裁掉</strong>。二维码外面那圈空白（quiet zone）是规范的一部分，
+            导出后不要紧贴着裁边。这里固定留 4 个模块的边距。</li>
+          <li><strong>内容太长</strong>。超出单个二维码的容量时会直接报错，而不是生成一个扫不出来的码。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <p>
+          本工具的功能设计与交互移植自
+          <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+          的 QR Code Generator（MIT 许可），在此做了中文化、界面统一，修掉了若干缺陷，
+          并把预览从 canvas 换成 SVG。详见 <code class="mono">THIRD-PARTY.md</code>。
+        </p>
+        <p>
+          二维码编码本身由内置的
+          <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener">qrcode-generator</a>
+          （Kazuhiko Arase，MIT 许可）完成，自托管在 <code class="mono">js/vendor/qrcode.umd.js</code>，
+          不通过 CDN 加载。
+        </p>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+        <a href="../../sitemap.xml">站点地图</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js" defer></script>
+<script src="../../js/color-utils.js" defer></script>
+<script src="../../js/site.js" defer></script>
+<script src="../../js/vendor/qrcode.umd.js" defer></script>
+<script src="../../js/tools/qr-generator.js" defer></script>
+</body>
+</html>
