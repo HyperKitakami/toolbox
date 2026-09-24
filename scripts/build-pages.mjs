@@ -3,7 +3,7 @@
    build-pages.mjs — 维护脚本（不是运行时构建，站点本身仍是纯静态）
    --------------------------------------------------------------------------
    做三件事：
-     1. 依据 js/registry.js 生成 6 个分类页 hubs/<id>/index.html
+     1. 依据 js/registry.js 生成分类页 hubs/<id>/index.html（有几个分类就生成几个）
      2. 把 scripts/chrome.mjs 里的页头/页脚同步进所有 HTML 的标记区间
      3. 给所有 CSS / JS 引用补上内容版本号（?v=<sha256 前 8 位>）
 
@@ -233,7 +233,11 @@ function main() {
   const stamped = syncAssets(walk(ROOT));
   if (!stamped) console.log('   已是最新，无需改动');
 
-  console.log(`\n完成。已上线 ${T.readyTools().length} 个工具，规划中 ${T.tools.length - T.readyTools().length} 个。`);
+  /* 三种状态分开数。之前写成 tools.length - ready 一律叫「规划中」，
+     把已挂起的也算进去了，日志和首页的筛选胶囊对不上。 */
+  const byStatus = (s) => T.tools.filter((t) => t.status === s).length;
+  console.log(`\n完成。已上线 ${T.readyTools().length} 个，规划中 ${byStatus('planned')} 个，` +
+    `已挂起 ${byStatus('suspended')} 个（合计 ${T.tools.length}）。`);
 }
 
 main();

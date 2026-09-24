@@ -938,14 +938,16 @@ kbd.hint-key {
 /* --- 19. 各容器里的空状态提示（共用排版） ------------------------------- */
 /* 用在哪：.code-empty（代码视图）、.table-empty（表格）、.outline-empty（大纲）、
    .match-empty（匹配列表）、.regex-explainer-empty（模式解释）、.md-empty（预览）、
-   .kv-empty（KCWiki 语音台词：筛选后一条都不剩） */
+   .kv-empty（KCWiki 语音台词：筛选后一条都不剩）、
+   .wv-result-empty（日语语音校对：还没开始分析） */
 .code-empty,
 .table-empty,
 .outline-empty,
 .match-empty,
 .regex-explainer-empty,
 .md-empty,
-.kv-empty {
+.kv-empty,
+.wv-result-empty {
   padding: 30px 14px;
   text-align: center;
   font-size: .88rem;
@@ -955,7 +957,8 @@ kbd.hint-key {
 .code-empty strong,
 .table-empty strong,
 .md-empty strong,
-.kv-empty strong {
+.kv-empty strong,
+.wv-result-empty strong {
   display: block;
   margin-bottom: 5px;
   color: var(--text);
@@ -1466,7 +1469,7 @@ kbd.hint-key {
   gap: 12px;
   margin-top: 14px;
 }
-.qr-panel[hidden] { display: none; }
+.qr-panel[hidden] { display: none; }   /* 已被 base.css 的全局 [hidden] 规则覆盖，留着不影响 */
 
 /* 预览：SVG 自适应容器，设的尺寸小于容器时按原尺寸显示 */
 .qr-preview {
@@ -2124,4 +2127,363 @@ kbd.hint-key {
   .kv-card-toggle .kv-file  { grid-area: 2 / 1 / 3 / 5; margin-left: 0; text-align: right; }
   .kv-card-head { gap: 6px; }
   .kv-omit { padding-left: 8px; }
+}
+
+/* --- 38. 日语语音校对（音频投放区、疑难词标签、结果卡片） ---------------- */
+
+/* 38.1 配置区的保存提示。常驻在面板标题栏、平时透明 ——
+   不这么做就得像原型那样每次提示都往 DOM 里插一个新节点、再靠 opacity 淡出。
+   保留占位是为了让标题栏不因为提示出现而抖动。 */
+.wv-save {
+  font-size: .78rem;
+  color: var(--ok);
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity var(--dur) var(--ease);
+}
+.wv-save.is-visible { opacity: 1; }
+
+/* 38.2 接口配置：四格自适应换行，窄屏落成一列 */
+.wv-config {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 12px 14px;
+}
+.wv-config-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* 38.3 音频投放区。整块都是热区：透明的 file input 铺满，
+   所以不用像原型那样再单独绑一次点击去触发 input.click()。 */
+.wv-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 20px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+  text-align: center;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.wv-drop.is-over {
+  border-color: var(--hub-accent, var(--accent));
+  background: var(--surface-2);
+}
+.wv-drop-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.wv-drop-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 2px;
+  color: var(--text-faint);
+}
+.wv-drop-icon svg { width: 100%; height: 100%; }
+.wv-drop-title { font-size: .9rem; color: var(--text); }
+.wv-drop-hint { font-size: .8rem; color: var(--text-faint); }
+.wv-drop-file {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  color: var(--hub-accent, var(--accent));
+  word-break: break-all;
+}
+
+.wv-player { width: 100%; margin-top: 10px; }
+.wv-inline-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+
+/* 38.4 疑难词标签。容器自己画边框，里面的输入框去掉自身描边。 */
+.wv-terms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  transition: border-color var(--dur) var(--ease);
+}
+.wv-terms:focus-within { border-color: var(--border-strong); }
+.wv-term {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px 3px 9px;
+  border-radius: var(--r-pill);
+  background: var(--bg-inset);
+  font-size: .84rem;
+  color: var(--text);
+}
+.wv-term-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.wv-term-del:hover { background: var(--border); color: var(--danger); }
+/* 输入框贴合容器：连边框、内边距与聚焦态一起清掉，否则会有个内框 */
+.wv-term-input,
+.wv-term-input:hover,
+.wv-term-input:focus {
+  flex: 1 1 160px;
+  min-width: 110px;
+  padding: 4px 2px;
+  border: none;
+  background: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/* 38.5 面板底栏里的提交按钮靠右 */
+.wv-submit { margin-left: auto; }
+
+/* 38.6 结果面板头部那一排控件 */
+.wv-lang {
+  width: auto;
+  padding: 5px 26px 5px 9px;
+  font-size: .82rem;
+}
+
+/* 38.7 结果区 */
+.wv-result {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+/* 译文视图不再是「就地替换一部分字段」，而是整块换掉结果区，
+   所以原先那条「下面只替换了理由与整句建议」的 ::before 提示删掉了
+   （旧文案会误导：现在译文只有一段，没有「保持原样的部分」）。 */
+
+/* 「校对后的文本」：结果区第一块，也是翻译的输入 */
+.wv-corrected {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ok);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+}
+.wv-corrected-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.wv-corrected-head h3 {
+  margin: 0;
+  font-size: .82rem;
+  font-weight: 680;
+  color: var(--text);
+}
+.wv-corrected-note { font-size: .76rem; color: var(--text-faint); }
+.wv-corrected-text {
+  margin: 0;
+  font-size: .92rem;
+  line-height: 1.85;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 译文视图：整块就是译文本身 */
+.wv-transcript {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--hub-accent, var(--accent));
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.wv-transcript h3 {
+  margin: 0 0 8px;
+  font-size: .82rem;
+  font-weight: 680;
+  color: var(--text-muted);
+}
+.wv-transcript-text {
+  margin: 0;
+  font-size: .95rem;
+  line-height: 1.95;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.wv-transcript-note {
+  margin: 10px 0 0;
+  font-size: .78rem;
+  color: var(--text-faint);
+}
+
+.wv-word {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+}
+.wv-word-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.wv-word-original {
+  font-size: .95rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-faint);
+}
+.wv-word-arrow { color: var(--text-faint); }
+.wv-word-best { font-size: .98rem; font-weight: 660; color: var(--ok); }
+
+.wv-cands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+.wv-cand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--bg-inset);
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.wv-cand.is-best {
+  border-color: var(--ok);
+  background: none;
+  color: var(--ok);
+}
+/* 置信度：写在候选胶囊里的百分比。数字本身是信息，颜色只是帮忙分级 ——
+   ≥80% 走 ok 色，<50% 走 warn 色并把整个胶囊改成虚线，
+   这样「模型自己都没把握」的候选不会和确信的候选长得一样。 */
+.wv-conf {
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+.wv-cand.is-high .wv-conf { color: var(--ok); }
+.wv-cand.is-low .wv-conf { color: var(--warn); font-weight: 620; }
+.wv-cand.is-low { border-style: dashed; }
+
+.wv-reason {
+  margin: 0;
+  padding: 10px 12px 12px;
+  font-size: .86rem;
+  line-height: 1.78;
+  color: var(--text-muted);
+  /* 模型给的理由常带换行与短列表，保留它们，别挤成一段 */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.wv-overall {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--hub-accent, var(--accent));
+  border-radius: var(--r);
+  background: var(--bg-inset);
+}
+.wv-overall h3 {
+  margin: 0 0 6px;
+  font-size: .82rem;
+  font-weight: 680;
+  color: var(--text);
+}
+.wv-overall p {
+  margin: 0;
+  font-size: .88rem;
+  line-height: 1.8;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 38.8 出错与「模型没按格式答」两种情况共用一块版式 */
+.wv-error {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+  font-size: .88rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+}
+.wv-error strong { display: block; margin-bottom: 5px; color: var(--text); }
+.wv-error p { margin: 0 0 6px; }
+.wv-error-tip { font-size: .82rem; color: var(--text-faint); }
+.wv-raw {
+  margin: 8px 0 0;
+  padding: 10px;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 38.9 分析中的等待态 */
+.wv-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 14px;
+  font-size: .88rem;
+  color: var(--text-muted);
+}
+.wv-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--hub-accent, var(--accent));
+  border-radius: 50%;
+  animation: wv-spin .8s linear infinite;
+}
+@keyframes wv-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .wv-spinner { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .wv-config { grid-template-columns: minmax(0, 1fr); }
+  .wv-submit { width: 100%; margin-left: 0; }
+  .wv-lang { width: 100%; }
 }

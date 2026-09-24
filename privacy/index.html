@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../css/base.css?v=058d76e5">
-<link rel="stylesheet" href="../css/site.css?v=9cec08cc">
+<link rel="stylesheet" href="../css/base.css?v=dee542d6">
+<link rel="stylesheet" href="../css/site.css?v=da4b5ba1">
 <script src="../js/theme-init.js?v=f8313ac9"></script>
 </head>
 <body>
@@ -32,6 +32,7 @@
       <a href="../hubs/converters/">转换</a>
       <a href="../hubs/generators/">生成器</a>
       <a href="../hubs/text/">文本</a>
+      <a href="../hubs/ai/">AI 辅助</a>
       <a href="../about/">关于</a>
     </nav>
 
@@ -72,22 +73,40 @@
           <li>没有分析统计（Google Analytics、百度统计之类，一个都没有）。</li>
           <li>没有第三方追踪器、像素、广告脚本。</li>
           <li>没有 Cookie，没有账号，没有登录。</li>
-          <li>没有把你输入的内容发到任何服务器 —— 所有计算都在浏览器里完成。</li>
+          <li>除「AI 辅助」一组外，没有把你输入的内容发到任何服务器 —— 所有计算都在浏览器里完成。</li>
         </ul>
 
         <h2>网络请求</h2>
         <p>
           页面加载时只会请求本站自己的静态资源：HTML、CSS、JavaScript、图标和字体。
           没有 CDN，没有外部字体服务，没有任何跨域请求。
-          工具运行期间不会再产生新的请求。
+          「AI 辅助」以外的工具在运行期间也不会产生新的请求。
+        </p>
+
+        <h2>AI 辅助工具会联网</h2>
+        <p>
+          「AI 辅助」这一组工具需要用你自己申请的 API Key 调用外部大模型，运行时会向你选定的服务商
+          发起请求（Anthropic、OpenAI、Google，或你自己填写的接口地址）。你在页面上填的内容，
+          包括上传的音频和粘贴的文本，都会发过去，之后怎么处理以那家服务商的隐私政策为准。
+          本站不经手、也保存不了这些数据 —— 它没有服务器。
+        </p>
+        <p>
+          API Key 只存在你自己浏览器的 <code class="mono">localStorage</code> 里，
+          不会发往本站的任何地方。想彻底清掉，在工具页上点「清除 Key」，
+          或者清空该站点的浏览器数据。完全不用这一组工具的话，全站不会产生任何跨域请求。
         </p>
 
         <h2>本地存储</h2>
-        <p>本站使用 <code class="mono">localStorage</code> 保存一项内容：</p>
+        <p>本站使用 <code class="mono">localStorage</code> 保存以下内容：</p>
         <ul>
           <li>
             <code class="mono">toolbox-theme</code> —— 你选择的主题（深色或浅色）。
             仅用于下次打开时保持一致，不含任何标识信息。
+          </li>
+          <li>
+            <code class="mono">toolbox-whisper-verifier</code> —— 「日语语音校对」自己保存的接口配置：
+            服务商、模型名、自定义接口地址，以及你填的 API Key。
+            Key 以<strong>明文</strong>存在本机、不会上传，但共用电脑上用完建议点「清除 Key」。
           </li>
         </ul>
         <p>
@@ -98,7 +117,8 @@
         <h2>第三方资源</h2>
         <p>
           本站不引入任何第三方库、字体或图标集。所有图标都是内联 SVG，
-          字体使用系统自带字体栈。因此不存在第三方服务能够观察到你访问过这里。
+          字体使用系统自带字体栈。因此不存在第三方服务能够观察到你访问过这里 ——
+          唯一的例外是上面说的 AI 辅助工具，而那次请求是你主动触发的。
         </p>
 
         <h2>托管</h2>
@@ -106,7 +126,7 @@
           本站是静态站点，部署在静态托管服务上。托管方与普通 Web 服务器一样，
           会在服务端日志中记录请求的 IP 与时间戳 —— 这是所有网站都无法避免的一层，
           与本站的代码无关。如果你对这一点敏感，可以把仓库下载到本地，
-          用任意静态服务器打开，完全离线使用。
+          用任意静态服务器打开：除「AI 辅助」之外的工具全部离线可用。
         </p>
 
         <h2>联系</h2>
@@ -131,8 +151,8 @@
           <span>工具箱</span>
         </div>
         <p class="footer-about">
-          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
-          不收集数据，不加载第三方资源。
+          纯静态的个人在线工具箱。除「AI 辅助」分类会调用外部模型外，
+          其余工具都在浏览器本地运行，不收集数据，不加载第三方资源。
         </p>
       </div>
       <div>
@@ -144,6 +164,7 @@
           <li><a href="../hubs/converters/">转换</a></li>
           <li><a href="../hubs/generators/">生成器</a></li>
           <li><a href="../hubs/text/">文本</a></li>
+          <li><a href="../hubs/ai/">AI 辅助</a></li>
         </ul>
       </div>
       <div>
@@ -167,7 +188,7 @@
 </footer>
 <!-- chrome:footer:end -->
 
-<script src="../js/registry.js?v=ac991201" defer></script>
-<script src="../js/site.js?v=78db1b55" defer></script>
+<script src="../js/registry.js?v=fcf2f2eb" defer></script>
+<script src="../js/site.js?v=9fea8c48" defer></script>
 </body>
 </html>

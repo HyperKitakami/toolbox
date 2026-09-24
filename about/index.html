@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>关于本站 · 工具箱</title>
-<meta name="description" content="工具箱是一个纯静态、零依赖的个人在线工具箱：原生 HTML/CSS/JavaScript，没有框架、没有构建步骤，所有工具都在浏览器本地运行。">
+<meta name="description" content="工具箱是一个纯静态、零依赖的个人在线工具箱：原生 HTML/CSS/JavaScript，没有框架、没有构建步骤，除「AI 辅助」分类外所有工具都在浏览器本地运行。">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../css/base.css?v=058d76e5">
-<link rel="stylesheet" href="../css/site.css?v=9cec08cc">
+<link rel="stylesheet" href="../css/base.css?v=dee542d6">
+<link rel="stylesheet" href="../css/site.css?v=da4b5ba1">
 <script src="../js/theme-init.js?v=f8313ac9"></script>
 </head>
 <body>
@@ -32,6 +32,7 @@
       <a href="../hubs/converters/">转换</a>
       <a href="../hubs/generators/">生成器</a>
       <a href="../hubs/text/">文本</a>
+      <a href="../hubs/ai/">AI 辅助</a>
       <a href="../about/">关于</a>
     </nav>
 
@@ -61,7 +62,8 @@
       <h1>关于本站</h1>
       <p class="lead">
         一个自己用的在线工具箱。想要什么工具就自己加一个，
-        不登录、不联网、不弹广告，随手打开就能用。
+        不登录、不弹广告，随手打开就能用；除「AI 辅助」那一组要调外部模型外，
+        其余工具都跑在浏览器本地。
       </p>
     </header>
 
@@ -71,7 +73,8 @@
         <p>
           大多数在线工具站都要把数据发到服务器上处理，哪怕只是格式化一段 JSON。
           这个站不这么做：页面是静态文件，逻辑跑在浏览器里，
-          断网之后照样能用。你也可以右键「查看网页源代码」，
+          断网之后照样能用——只有「AI 辅助」那一组例外，它们本来就要连外部模型。
+          你也可以右键「查看网页源代码」，
           看到的就是实际运行的代码，没有任何打包和混淆。
         </p>
 
@@ -79,6 +82,8 @@
         <ul>
           <li><strong>纯静态</strong>：原生 HTML、CSS、JavaScript，没有框架，没有构建步骤。</li>
           <li><strong>零第三方请求</strong>：不加载 CDN、字体、分析脚本。字体用系统字体栈。</li>
+          <li><strong>只有「AI 辅助」会联网</strong>：那一组要用你自己的 API Key 调外部模型，
+            输入会发往第三方接口，每个页面上都标明了发往哪里；其余工具的输入不离开本机。</li>
           <li><strong>一个工具 = 一个目录 + 一个脚本</strong>：<code class="mono">&lt;slug&gt;/index.html</code> 加 <code class="mono">js/tools/&lt;slug&gt;.js</code>，逻辑不内联。</li>
           <li><strong>数据驱动</strong>：首页、分类页、搜索全部由 <code class="mono">js/registry.js</code> 生成，加工具只改这一个文件。</li>
         </ul>
@@ -98,7 +103,7 @@
 │   └── tools/
 │       ├── _template.js       工具逻辑模板
 │       └── word-counter.js
-├── hubs/&lt;id&gt;/index.html       六个分类页（由脚本生成）
+├── hubs/&lt;id&gt;/index.html       七个分类页（由脚本生成）
 ├── tools/
 │   ├── _template/index.html   工具页模板：复制这个目录开新工具
 │   └── word-counter/index.html
@@ -150,6 +155,10 @@
           工具按「现状」提供，用于日常顺手处理数据。涉及密钥、证书等敏感内容时，
           请自行确认结果正确后再使用。
         </p>
+        <p>
+          「AI 辅助」一组会调用你自己配置的第三方接口，费用按对方的计价方式产生，与本站无关；
+          接口返回的内容由模型生成，未必准确，请自行判断。
+        </p>
       </div>
     </section>
   </div>
@@ -167,8 +176,8 @@
           <span>工具箱</span>
         </div>
         <p class="footer-about">
-          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
-          不收集数据，不加载第三方资源。
+          纯静态的个人在线工具箱。除「AI 辅助」分类会调用外部模型外，
+          其余工具都在浏览器本地运行，不收集数据，不加载第三方资源。
         </p>
       </div>
       <div>
@@ -180,6 +189,7 @@
           <li><a href="../hubs/converters/">转换</a></li>
           <li><a href="../hubs/generators/">生成器</a></li>
           <li><a href="../hubs/text/">文本</a></li>
+          <li><a href="../hubs/ai/">AI 辅助</a></li>
         </ul>
       </div>
       <div>
@@ -203,7 +213,7 @@
 </footer>
 <!-- chrome:footer:end -->
 
-<script src="../js/registry.js?v=ac991201" defer></script>
-<script src="../js/site.js?v=78db1b55" defer></script>
+<script src="../js/registry.js?v=fcf2f2eb" defer></script>
+<script src="../js/site.js?v=9fea8c48" defer></script>
 </body>
 </html>

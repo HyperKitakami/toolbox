@@ -11,7 +11,8 @@ const HUBS = [
   ['color', '颜色'],
   ['converters', '转换'],
   ['generators', '生成器'],
-  ['text', '文本']
+  ['text', '文本'],
+  ['ai', 'AI 辅助']
 ];
 
 const LOGO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>`;
@@ -76,8 +77,8 @@ export function footer(p) {
           <span>工具箱</span>
         </div>
         <p class="footer-about">
-          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
-          不收集数据，不加载第三方资源。
+          纯静态的个人在线工具箱。除「AI 辅助」分类会调用外部模型外，
+          其余工具都在浏览器本地运行，不收集数据，不加载第三方资源。
         </p>
       </div>
       <div>

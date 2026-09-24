@@ -596,6 +596,15 @@
 }
 .notice strong { color: var(--text); }
 
+/* 警告变体：用在「这个工具会联网」这类需要被真正看见、但不属于报错的地方。
+   左侧一道琥珀色条，其余排版与 .notice 一致。 */
+.notice--warn {
+  border-color: var(--warn);
+  border-left-width: 3px;
+  background: var(--bg-subtle);
+}
+.notice--warn svg { color: var(--warn); }
+
 /* --- 10. 404 ------------------------------------------------------------- */
 .notfound {
   flex: 1;

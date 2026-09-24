@@ -188,8 +188,20 @@
   }
 
   /* --- 4. 首页 ----------------------------------------------------------- */
+  /* hero 里「分类数」「会联网」不是工具状态计数，data-count 那套（见 bindChips）
+     只认 ready / planned / suspended，所以单列一支。值一律从 registry 算，
+     不在 HTML 里写死 —— 之前「网络请求 0」就是这么过期的。 */
+  function paintStats() {
+    $$('[data-stat]').forEach(function (el) {
+      var key = el.getAttribute('data-stat');
+      if (key === 'hubs') el.textContent = String(T.hubs.length);
+      else if (key === 'online') el.textContent = String(T.onlineTools().length);
+    });
+  }
+
   function initHome() {
     renderHubs($('#hub-grid'));
+    paintStats();
 
     var box = $('#tool-grid');
     if (!box) return;
