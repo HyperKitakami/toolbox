@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>时间戳转换 · 工具箱</title>
+<meta name="description" content="在线 Unix 时间戳转换：时间戳与日期时间双向互转，自动识别秒 / 毫秒 / 微秒 / 纳秒，输出 ISO 8601、RFC 1123、本地时间与相对时间，附多时区对照表与批量转换。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css?v=058d76e5">
+<link rel="stylesheet" href="../../css/site.css?v=9cec08cc">
+<link rel="stylesheet" href="../../css/tool.css?v=053d1382">
+<script src="../../js/theme-init.js?v=f8313ac9"></script>
+</head>
+<body data-tool="timestamp-converter" data-hub="converters">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/converters/">转换</a>
+      <span class="sep">/</span>
+      <span aria-current="page">时间戳转换</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>时间戳转换</h1>
+        <p class="lead">
+          时间戳与日期时间<strong>双向</strong>互转：填时间戳得到日期，填日期得到时间戳。
+          纯数字会按数量级自动认出是<strong>秒 / 毫秒 / 微秒 / 纳秒</strong>哪一档，
+          并把判定结果写出来 —— 判错了可以直接手动指定。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">四档单位</span>
+          <span class="badge">多时区</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="tool-body">
+
+        <!-- 左列：输入 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">输入</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="ts-now">现在</button>
+              <button class="btn btn--sm" type="button" id="ts-share">分享链接</button>
+              <button class="btn btn--sm" type="button" id="ts-clear">清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="field-stack">
+              <div>
+                <label class="field-label" for="ts-input">
+                  时间戳或日期 <span class="faint">时间戳填纯数字，日期用 ISO 8601 之类的标准写法</span>
+                </label>
+                <input class="input input--mono" type="text" id="ts-input"
+                       autocomplete="off" autocapitalize="off" spellcheck="false"
+                       placeholder="1717200000 · 2026-06-01T00:00:00Z · 2026-06-01">
+              </div>
+
+              <div>
+                <label class="field-label">
+                  纯数字输入的单位 <span class="faint">选「自动」时按数量级判断</span>
+                </label>
+                <div class="choice-row" id="ts-units" role="group" aria-label="纯数字输入的单位"></div>
+              </div>
+
+              <label class="switch">
+                <input type="checkbox" id="ts-bare-local">
+                <span>裸日期按本地零点解释
+                  <span class="faint">如 2026-06-01；默认按 UTC 零点（ECMAScript 规定）</span></span>
+              </label>
+
+              <p class="tool-status" id="ts-status"></p>
+            </div>
+          </div>
+          <div class="panel-foot">
+            <span>数字支持正负号与小数（如 1717200000.5）</span>
+          </div>
+        </section>
+
+        <!-- 右列：结果 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">结果</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="ts-copy"
+                      data-copy-target="#ts-iso-text">复制</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <button class="value-display" type="button" id="ts-iso"
+                    data-copy-target="#ts-iso-text" title="点击复制">
+              <span id="ts-iso-text"></span>
+            </button>
+            <div class="value-list ts-rows" id="ts-rows"></div>
+          </div>
+          <div class="panel-foot">
+            <span>点任意一行复制该行的值</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 时区对照 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">时区对照</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm btn--primary" type="button" id="ts-copy-zones">复制全部</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div>
+            <label class="field-label" for="ts-custom-tz">
+              自定义时区 <span class="faint">填 IANA 时区名，有自动补全</span>
+            </label>
+            <input class="input input--mono" type="text" id="ts-custom-tz" list="ts-tz-list"
+                   autocomplete="off" autocapitalize="off" spellcheck="false"
+                   placeholder="Europe/Berlin">
+            <datalist id="ts-tz-list"></datalist>
+            <p class="hint" id="ts-custom-hint"></p>
+          </div>
+          <div class="value-list scroll-list ts-zones" id="ts-zones"></div>
+        </div>
+        <div class="panel-foot">
+          <span>同一个时刻在各时区的墙上时间；本地时区排在最前面并高亮</span>
+        </div>
+      </section>
+
+      <!-- 批量转换 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">批量转换</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm" type="button" id="ts-run-batch">转换全部</button>
+            <button class="btn btn--sm btn--primary" type="button" id="ts-copy-batch">复制 TSV</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <label class="field-label" for="ts-batch">一行填一个时间戳或日期</label>
+          <textarea class="textarea" id="ts-batch" rows="5"
+                    spellcheck="false" placeholder="1717200000&#10;1717200000000&#10;2026-06-01"></textarea>
+          <p class="tool-status" id="ts-batch-status"></p>
+          <div class="table-scroll table-scroll--boxed" id="ts-batch-wrap" hidden>
+            <table class="data-table">
+              <thead>
+                <tr><th>输入</th><th>Unix 秒</th><th>ISO 8601 (UTC)</th><th>本地时间</th></tr>
+              </thead>
+              <tbody id="ts-batch-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <span>一次最多 500 行；与上面的单位设置共用同一套解析规则</span>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>四种单位怎么认</h3>
+        <ul>
+          <li><strong>秒（10 位）</strong> —— 经典 Unix 时间戳，如 <code class="mono">1717200000</code>。
+            <code class="mono">date +%s</code>、PHP <code class="mono">time()</code>、
+            大多数后端 API 用的是这一档。</li>
+          <li><strong>毫秒（13 位）</strong> —— JavaScript 的 <code class="mono">Date.now()</code>、
+            Java 的 <code class="mono">System.currentTimeMillis()</code>，如 <code class="mono">1717200000000</code>。</li>
+          <li><strong>微秒（16 位）</strong> —— Python 的 <code class="mono">time.time()</code> 取整到微秒、
+            MySQL 的 <code class="mono">TIMESTAMP(6)</code>。</li>
+          <li><strong>纳秒（19 位）</strong> —— Go 的 <code class="mono">UnixNano()</code>、
+            Rust 的 <code class="mono">SystemTime</code>、ClickHouse 的
+            <code class="mono">DateTime64(9)</code>，如 <code class="mono">1717200000000000000</code>。</li>
+          <li>「自动」按数量级分档（<code class="mono">&lt;10¹¹</code> 秒、<code class="mono">&lt;10¹⁴</code> 毫秒、
+            <code class="mono">&lt;10¹⁷</code> 微秒、再往上纳秒），判定结果写在输入框下面。
+            边界上本来就有歧义，判错了在「纯数字输入的单位」里点一下改过来即可。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>裸日期为什么容易踩坑</h3>
+        <ul>
+          <li>按 ECMAScript 规定，<code class="mono">2026-06-01</code> 这种<strong>只有日期</strong>的写法
+            按 <strong>UTC 零点</strong>解释；而 <code class="mono">2026-06-01T00:00:00</code>
+            这种<strong>带时间但没带时区</strong>的写法按<strong>本地零点</strong>解释。</li>
+          <li>于是两个看起来差不多的写法在 UTC+8 下相差 8 小时 ——
+            <code class="mono">2026-06-01</code> 得到 <code class="mono">2026-06-01T00:00:00Z</code>，
+            <code class="mono">2026-06-01T00:00:00</code> 得到 <code class="mono">2026-05-31T16:00:00Z</code>。
+            这不是工具算错了，是规范就这么定的。</li>
+          <li>遇到裸日期时，状态行会把实际采用的口径和对应的本地时间一起写出来。
+            想让裸日期也按本地零点算，打开上面的开关。</li>
+          <li>跨时区协作时，日期一律带上时区后缀（<code class="mono">Z</code> 或
+            <code class="mono">+08:00</code>）最省事 —— 不带后缀的写法含义取决于读它的人在哪。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>时区与夏令时</h3>
+        <ul>
+          <li>时间戳本身是<strong>与时区无关</strong>的：同一个瞬间，全世界的时间戳都一样。
+            时区只影响「显示成什么墙上时间」。</li>
+          <li>时区对照表里的偏移是<strong>该时刻</strong>的偏移，已经考虑夏令时。
+            同一个时区在夏天和冬天的偏移可能差一小时
+            （比如 <code class="mono">America/New_York</code> 是 −05:00 或 −04:00）。</li>
+          <li>时区名用的是 IANA 数据库的写法（<code class="mono">Asia/Shanghai</code>、
+            <code class="mono">Europe/Berlin</code>），不是 <code class="mono">CST</code> 这种缩写 ——
+            缩写 <code class="mono">CST</code> 同时代表中国标准时间、美国中部时间与古巴标准时间，
+            三个地方差 13 个小时。</li>
+          <li>中国全境统一使用 UTC+8，没有夏令时；<code class="mono">Asia/Urumqi</code>
+            在 IANA 数据库里是 UTC+6 的历史遗留条目。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>口径与范围</h3>
+        <ul>
+          <li><strong>相对现在</strong>按「一年 = 365 天、一月 = 30 天」估算，
+            所以「1 年前」是 365 天前而不是日历上的同一天。这个口径与上游一致。</li>
+          <li>秒的取值用 <code class="mono">Math.floor(毫秒 / 1000)</code>，
+            与 <code class="mono">date +%s</code> 一致（1970 年之前的时间戳会向负方向取整）。</li>
+          <li>可表示的日期范围由 JavaScript 的 <code class="mono">Date</code> 决定，约公元 ±27 万年。
+            年份超出 1–9999 时会给出提醒 —— 多数系统的时间库处理不了这个范围。</li>
+          <li>只处理公历。1582 年之前的日期按前推公历（proleptic Gregorian）计算，
+            与当时实际使用的儒略历不一致。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <ul>
+          <li>移植自 <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+            的 <code class="mono">timestamp-converter</code>，作者 Jamal Tantaoui / Iris Digital，MIT 许可。</li>
+          <li>移植时做了三件事：界面全量中文化、改用本站的设计系统与组件类名、
+            逐段审逻辑并修复缺陷。改动清单见
+            <code class="mono">THIRD-PARTY.md</code> 与 <code class="mono">js/tools/timestamp-converter.js</code>
+            的文件头注释。</li>
+          <li>修掉的主要缺陷：19 位纳秒时间戳被当成微秒（会算出公元 56385 年）、
+            带小数的秒级时间戳解析不了、<code class="mono">+</code> 开头的数字解析不了、
+            裸日期的时区口径不告知、自动判定的单位不允许覆盖、批量没有行数上限。</li>
+          <li>新增：单位可手动指定、时区对照表与自定义时区、可复制的结果行与 TSV 导出。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js?v=0755da2d" defer></script>
+<script src="../../js/site.js?v=78db1b55" defer></script>
+<script src="../../js/tools/timestamp-converter.js?v=a109e827" defer></script>
+</body>
+</html>

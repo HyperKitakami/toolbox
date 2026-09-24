@@ -55,6 +55,10 @@ tools-box/
 │       ├── diff-checker.js    自研
 │       ├── random-string.js   自研
 │       ├── mock-data.js       自研
+│       ├── unit-converter.js  自研
+│       ├── timestamp-converter.js 移植
+│       ├── number-formatter.js 自研
+│       ├── base-converter.js  自研
 │       ├── password-generator.js 移植
 │       ├── lorem-ipsum.js     移植
 │       ├── uuid-generator.js  移植
@@ -82,7 +86,7 @@ tools-box/
 | 开发者 | JSON 格式化、CSV 查看器、Markdown 预览、Markdown 转 HTML、文本差异对比、正则表达式测试 | 0 | 5 |
 | 安全 | — | 8 | 0 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
-| 转换 | — | 6 | 0 |
+| 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
 | 文本 | 字数统计 | 6 | 0 |
 
@@ -118,10 +122,14 @@ tools-box/
 | 密码生成器 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `password-generator` + [EFF 长词表](https://www.eff.org/dice) | MIT / CC BY 3.0 US |
 | 占位文本生成 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `lorem-ipsum` + Cicero 原文 | MIT / 公有领域 |
 | UUID 生成器 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `uuid-generator` | MIT |
+| 时间戳转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `timestamp-converter` | MIT |
 | 文本差异对比 | 自研 | — |
 | 字数统计 | 自研 | — |
 | 随机字符串 | 自研 | — |
 | 测试数据生成 | 自研 | — |
+| 单位换算 | 自研 | — |
+| 数字格式化 | 自研 | — |
+| 进制转换 | 自研 | — |
 
 ## 内置的第三方资源
 
@@ -220,7 +228,7 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 [Iris Digital](https://irisdigital.tech/) 构建并维护的隐私优先工具集，
 同样以 MIT 许可开源。本项目的整体形态（纯静态、零依赖、100% 客户端运行、
 一个工具一个目录加一个脚本）直接参考了它的做法，
-目前有十五个工具是基于它移植而来：
+目前有十六个工具是基于它移植而来：
 
 - **正则表达式测试** ← `regex-tester`：沿用其模式解释算法、界面结构与交互流程
 - **JSON 格式化** ← `json-formatter`：沿用其格式化 / 压缩 / 校验的功能划分与粘贴即格式化
@@ -245,8 +253,10 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
   补上中文语料与中文界面，结果区换成正文字体
 - **UUID 生成器** ← `uuid-generator`：沿用其三个版本、三个格式开关、批量与校验器，
   并按 RFC 9562 补上 v7 的同毫秒单调计数器与 v1 的节点多播位
+- **时间戳转换** ← `timestamp-converter`：沿用其双向输入、结果字段与批量表格，
+  补上纳秒档与可手动覆盖的单位选择、多时区对照表
 
-十五者都做了中文化、设计系统统一，并修复了上游缺陷 ——
+十六者都做了中文化、设计系统统一，并修复了上游缺陷 ——
 正则工具修掉了空匹配死循环与分享链接 base64 填充导致的参数丢失；
 JSON 工具重写了语法高亮（上游因为「先转义再匹配」导致键名与字符串值完全不着色）；
 Markdown 工具移除了 Prism 依赖，改用内置的轻量 HTML 着色；
@@ -270,7 +280,11 @@ Markdown 预览补上了 localStorage 容错，修正了「清空」按钮的语
 UUID 生成器按 RFC 9562 补上了 v1 节点标识的单播/多播位（原文是 MUST）、
 v7 在同一毫秒内的单调计数器（RFC 明确点名了批量场景）、
 校验器对错位横线的放行，以及批量数量不校验，并把上游为规避 BigInt 字面量
-而拆出的两个文件收成一个。
+而拆出的两个文件收成一个；
+时间戳转换修掉了 19 位纳秒时间戳被当成微秒（会算出公元 56385 年且不报错）、
+带小数的秒级时间戳解析不了而同样形态的短小数却被当成日期解析、`+` 开头的数字解析不了、
+裸日期的时区口径不告知、自动判定的单位不允许覆盖、批量没有行数上限，
+并把时区行改用 `formatToParts` 自己拼字符串以摆脱 locale 的影响。
 
 **库与数据的作者们**：[marked](https://github.com/markedjs/marked)（MarkedJS、Christopher Jeffrey）、
 [DOMPurify](https://github.com/cure53/DOMPurify)（Cure53），以及

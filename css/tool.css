@@ -1645,3 +1645,102 @@ kbd.hint-key {
   border-radius: var(--r);
   max-height: 52vh;
 }
+
+/* --- 31. 单位换算 ------------------------------------------------------- */
+/* 结果列表里的单位名比通用列表的「#1」长得多（「平方英里」「美制液量盎司」），
+   所以标签列要加宽；数值右对齐并用等宽数字，方便纵向比对大小。
+   列表本身排成多列：面板是全宽的，单列时单位名在左、数值被推到最右，
+   中间空出一大片，读起来要横跨整行找对应关系。
+
+   minmax 的最小值要写成 min(300px, 100%) 而不是 300px ——
+   固定最小值在窄屏（容器比 300px 还窄）时会撑破容器，
+   而容器有 overflow: auto 会把它裁掉，页面上看起来就是「右边的数字被切了」，
+   且 documentElement.scrollWidth 仍然是等于 innerWidth 的，探针查不出来。 */
+.uc-list {
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+}
+.uc-list .value-row {
+  grid-template-columns: minmax(76px, 124px) minmax(0, 1fr);
+}
+.uc-list .value-text {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 「精确定义」标记：表示该系数是国际协定的定义值，不是测量值 */
+.uc-exact {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 7px;
+  border-radius: var(--r-pill);
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: .72rem;
+  font-weight: 650;
+  letter-spacing: .02em;
+}
+
+/* --- 32. 时间戳转换 ----------------------------------------------------- */
+/* 结果行的标签比通用列表长（「ISO 8601 (本地)」「RFC 1123 (UTC)」），加宽标签列。
+   数值保持左对齐 —— 里面是 ISO 字符串，右对齐反而不好比对。 */
+.ts-rows .value-row {
+  grid-template-columns: minmax(96px, 132px) minmax(0, 1fr);
+}
+
+/* 时区对照表：同样是全宽面板，排成多列，避免时区名与时间被拉得太开。
+   值这一列用 max-content + nowrap —— 时间串里有一个空格，
+   列一窄就会在空格处折行，把「+08:00」单独挤到第二行。
+   最小值同样要 min(360px, 100%)，理由见上一节。 */
+.ts-zones {
+  margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+}
+.ts-zones .value-row {
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+.ts-zones .value-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ts-zones .value-text {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* 窄屏放不下「时区名 + 时间」一行时改成上下两行，
+   否则时区名会被省略号截成「America/Los_An…」，根本认不出是哪个时区 */
+@media (max-width: 600px) {
+  .ts-zones .value-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .ts-zones .value-text { text-align: left; }
+}
+/* 本地时区那一行点出来，扫一眼就知道自己在哪一档 */
+.ts-local .value-label { color: var(--hub-accent, var(--accent)); }
+
+/* 批量表格里解析失败的行 */
+.data-table .cell-error { color: var(--danger); }
+
+/* --- 33. 数字格式化 ----------------------------------------------------- */
+/* 结果行的标签是「科学计数法」「人民币大写」这类中等长度的词，比通用列表宽一些。
+   值可能是很长的中文大写金额，靠 .value-text 自带的 overflow-wrap 换行。 */
+.nf-rows .value-row {
+  grid-template-columns: minmax(96px, 132px) minmax(0, 1fr);
+}
+/* 四个统计格子在两栏布局的列宽（约 543px）里用通用的 132px 最小值只能排下 3 个，
+   第四个会单独掉到第二行、左边空一大块。这里把最小值收到 112px 让四个排成一行。
+   同样用 min(…, 100%)，窄屏时才不会撑破容器。 */
+.nf-stats,
+.bc-stats {
+  grid-template-columns: repeat(auto-fit, minmax(min(112px, 100%), 1fr));
+}
+
+/* --- 34. 进制转换 ------------------------------------------------------- */
+/* 结果行的标签是「二进制」「字节视图」这类中等长度的词，比通用列表宽一些。
+   值是可能很长的二进制串，靠 .value-text 自带的 overflow-wrap 换行。 */
+.bc-rows .value-row {
+  grid-template-columns: minmax(88px, 124px) minmax(0, 1fr);
+}
+/* 「自定义进制」的数值输入：默认藏在胶囊下面，选中「自定义」才出现 */
+.bc-custom {
+  margin-top: 8px;
+}
