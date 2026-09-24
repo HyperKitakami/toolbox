@@ -47,6 +47,20 @@ export default async function run() {
     .filter((n) => !fs.existsSync(path.join(ROOT, 'tools', n, 'index.html')));
   ok('tools/ 下没有空目录', notInRegistry.length === 0, notInRegistry.join(', '));
 
+  /* 每个已上线的工具都必须有专属测试套件，避免漏测 */
+  const testFiles = fs.readdirSync(path.join(ROOT, 'scripts', 'tests'))
+    .filter((f) => f.endsWith('.mjs') && !f.startsWith('_'))
+    .map((f) => f.replace(/\.mjs$/, ''));
+  const noTest = ready.filter((t) => !testFiles.includes(t.slug)).map((t) => t.slug);
+  ok('每个已上线工具都有专属测试套件', noTest.length === 0,
+     noTest.length ? '缺少 ' + noTest.join(', ') : '');
+
+  /* 反过来也查一下：测试套件不能指向不存在的工具 */
+  const orphanTests = testFiles.filter(
+    (f) => f !== 'site' && f !== 'color-utils' && !T.tools.some((t) => t.slug === f)
+  );
+  ok('没有指向不存在工具的测试套件', orphanTests.length === 0, orphanTests.join(', '));
+
   /* ---------- 2. 首页 ---------- */
   section('2. 首页');
 
