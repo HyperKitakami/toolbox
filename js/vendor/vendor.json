@@ -34,5 +34,19 @@
     "size": 56694,
     "usedBy": ["tools/qr-generator/"],
     "modified": false
+  },
+  {
+    "name": "eff-large-wordlist",
+    "version": "2016-07-18",
+    "file": "eff-large-wordlist.js",
+    "license": "CC BY 3.0 US",
+    "homepage": "https://www.eff.org/dice",
+    "source": "https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt → 只取第二列（7776 个词），按原顺序每行一个词包成 JS 模板字符串",
+    "sourceSha256": "addd35536511597a02fa0a9ff1e5284677b8883b83e986e43f15a3db996b903e",
+    "wordColumnSha256": "6d557f0693958fb5e650b68b5bee585eb82cf4da32965505c789e924743bc522",
+    "sha256": "8e5b244d4f483dff937858a68e6b35944a2507ff956d2ae1c152bb9df584c82d",
+    "size": 63563,
+    "usedBy": ["tools/password-generator/"],
+    "modified": true
   }
 ]

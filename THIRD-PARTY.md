@@ -325,6 +325,155 @@
 - **内置库换成 npm 官方产物**，理由见下面「二、内置的第三方库」
 - 九种内容类型、纠错等级、三种模块样式、尺寸、配色、中心 Logo、PNG / SVG 导出沿用上游设计
 
+### 13. 密码生成器
+
+| | |
+|---|---|
+| 上游文件 | `password-generator/index.html`、`js/tools/password-generator.js`、`js/wordlist.js` |
+| 本项目文件 | `tools/password-generator/index.html`、`js/tools/password-generator.js`、`js/vendor/eff-large-wordlist.js` |
+
+改动：
+
+- 界面文案全量中文化；上游的 `js/common.js`（`copyToClipboard` / `showToast` /
+  `escapeHtml`）未引入，复制改用本项目的 `T.util.copy` 与全局代理
+- 改用本项目的设计系统与组件类名，去掉上游的内联样式与 `card` 结构
+- **修复模偏差**。上游用 `cs[v % cs.length]` 取字符 —— 字符集长度不整除 2^32 时，
+  靠前的字符出现概率会略高（`%` 的经典缺陷）。改为拒绝采样，与随机字符串共用
+  `js/random-utils.js`。
+- **修复字符集为空时的静默降级**。上游 `getCharset()` 在四个类别都没勾时返回小写字母，
+  用户看到的是「我明明只勾了符号，怎么出来一串小写字母」。现在直接报错并说明原因。
+- **修复复制没有降级**。上游裸调 `navigator.clipboard.writeText`：非安全上下文
+  （http、部分内嵌浏览器）下 `navigator.clipboard` 是 `undefined`，会直接抛 TypeError；
+  即使存在，Promise 失败也没有任何处理，用户会以为复制成功了。
+- **修复清空自定义分隔符后无法恢复**。上游只在输入非空时赋值，把输入框清空后仍旧
+  沿用上一个值。现在「填了就用自定义，清空即回到胶囊选中的那个」。
+- **修复非法数值不校验**。上游直接 `parseInt`，输入框清空得到 `NaN`，
+  `new Uint32Array(NaN)` 会**静默产出一个空密码**。现在非法输入标红 + 失焦回退。
+- **修复批量条数被静默截断**。上游 `Math.min(..., 100)`，填 500 只给 100，
+  界面上没有任何提示。现在输入框直接限定 1–100，超界标红回退。
+- **修复爆破时间的分档上限**。上游的分档表最高只到「Billions of years」，
+  而 `Math.pow(2, entropy)` 在熵值大时要么溢出成 `Infinity`、要么落到 10^241 秒
+  这种量级 —— 一个 128 字符的密码会被告知「约数十亿年」，实际是 10^233 年，
+  差了两百多个数量级。现在全程在对数空间计算，按 年 / 万年 / 亿年 / 万亿年 /
+  `10^N 年` 分档，不会溢出也不会被压档。
+- **替换词表**。上游自带的 `js/wordlist.js` 只有 529 个词，按字母序排到 `faculty`
+  就断了（首字母分布 a:100 b:98 c:152 d:91 e:85 f:3），是一份被截断的列表。
+  换成 EFF 官方 7776 词长词表，见下面「二、内置的第三方资源」。
+- 新增「每类至少出现一次」，应付「必须含大小写和数字」这类校验规则
+- 新增熵值、四段强度条与离线爆破时间；熵值按强度分三档上色
+- 双模式（随机密码 / 口令短语）、长度滑杆、字符类别开关、分隔符胶囊、批量生成
+  沿用上游设计
+
+> 「每类至少出现一次」会让分布不再完全均匀，所以界面显示的熵是**上界**，
+> 状态行会明确写出这一点。上游没有这个功能，也就没有这个问题。
+
+### 14. 占位文本生成
+
+| | |
+|---|---|
+| 上游文件 | `lorem-ipsum/index.html`、`js/tools/lorem-ipsum.js`、`js/cicero.js` |
+| 本项目文件 | `tools/lorem-ipsum/index.html`、`js/tools/lorem-ipsum.js`、`js/lorem-corpus.js` |
+
+改动：
+
+- 界面文案全量中文化；上游的 `js/common.js`（`copyToClipboard` / `downloadText`）未引入，
+  复制改用本项目的全局代理，下载改用本次新抽出的 `T.util.download`
+- 改用本项目的设计系统与组件类名；结果区换成正文字体（`.output--prose`）——
+  占位文本的用途就是看排版，等宽字体看不出行距与整体灰度
+- **修复后行断言导致整个脚本加载失败**（可观察）。上游用
+  `p.split(/(?<=[.?!])\s+/)` 切句。正则里的后行断言在 Safari 16.4 之前是
+  **语法错误**（不是运行时异常），整个文件解析不过去，工具直接白屏。
+  改成不依赖 lookbehind 的扫描式切分。
+- **修复「包一层 HTML 标签」在「单词」单位下静默失效**（可观察）。
+  上游那个分支根本没读这个开关，勾了等于没勾。现在四种单位都会包。
+- **修复数量超过语料长度时的整块重复**（可观察）。上游 `pool[i % pool.length]`
+  让第 2 轮与第 1 轮**逐字相同** —— 要 20 个段落、语料只有 8 段时，
+  后 12 段就是前 8 段的逐字复制。现在每一轮重新打乱。
+- **修复数量输入不校验**（可观察）。上游 `Math.min(parseInt(v) || 3, 100)`：
+  清空输入框静默变回 3、填 500 静默变 100，界面上没有任何提示。
+  改用 `T.util.readInt`（标红 + 失焦回退）。
+- **修复复制没有降级**（可观察）。上游裸调 `navigator.clipboard.writeText`，
+  非安全上下文（http、部分内嵌浏览器）下会直接抛 TypeError。
+- **修正语料标注**（可观察）。上游把 8 段语料一起标成 Cicero
+  《De Finibus Bonorum et Malorum》1.10.32–1.10.33 原文，但**后 2 段不是** ——
+  它们是网络模板里流传的另一套拉丁填充句（`pellentesque` / `accumsan` /
+  `scelerisque` 这些词来自别处），第 7、8 段里连一个 `lorem` 都没有。
+  本次把标注改准，数据原样保留。
+- 顺手改直两处**隐患**（当前语料下看不出问题，但会随语料变化暴露）：
+  词池用 `if (w)` 判断的是清洗**前**的 token，纯标点 token 会以空串进池子，
+  产出多余空格；「以经典开头」从下标 1 开始取，`pool[0]` 在 count 较小时
+  永远取不到 —— 因为池子每次生成都会重新打乱，各段落长期看仍然均匀，
+  所以这一条**不算可观察缺陷**，只是意图明显是「取满池子」而代码没做到。
+- 字符数改用码点数（上游用 `result.length`，那是 UTF-16 码元数）
+- **新增中文语料与中文界面** —— 上游只有拉丁文
+- 四种单位、以经典开头、HTML 包裹、复制 / 下载沿用上游设计
+
+> **拉丁语料的出处。** `js/lorem-corpus.js` 里的 8 段中，前 6 段出自 Cicero
+> 《De Finibus Bonorum et Malorum》1.10.32–1.10.33（公元前 45 年，早已进入
+> 公有领域），也就是 Lorem ipsum 的标准出处；后 2 段是网络模板里流传的另一套
+> 拉丁填充句，出处已不可考。拉丁文本身不涉及版权，所以数据原样沿用，
+> 只把标注改准。这一点同时写在 `js/lorem-corpus.js` 的文件头和工具页的说明区。
+
+> **中文语料是本项目自撰的**（随本仓库以 MIT 发布，可自由使用），不是从别处抄的：
+> 内容是围绕排版与阅读的中性叙述，看起来是正常的现代汉语散文，实际不含任何信息，
+> 也不引用任何受版权保护的作品。中文没有天然的词边界，所以中文下不提供
+> 「单词」这一档，也不提供「以经典开头」（拉丁文的经典开头对中文没有意义）。
+
+### 15. UUID 生成器
+
+| | |
+|---|---|
+| 上游文件 | `uuid-generator/index.html`、`js/tools/uuid-generator.js`、`js/tools/uuid-generator-bigint.js` |
+| 本项目文件 | `tools/uuid-generator/index.html`、`js/tools/uuid-generator.js` |
+
+改动：
+
+- 界面文案全量中文化；上游的 `js/common.js`（`copyToClipboard` / `downloadText`）未引入，
+  复制改用本项目的全局代理，下载改用 `T.util.download`
+- 改用本项目的设计系统与组件类名
+- **修复 v1 的节点标识没有设单播/多播位（违反规范的 MUST）**。
+  RFC 9562 §6.10 原文：
+
+  > "After generating the 48-bit fully randomized node value, implementations
+  > **MUST** set the least significant bit of the first octet of the Node ID to 1.
+  > This bit is the unicast or multicast bit, which will never be set in IEEE 802
+  > addresses obtained from network cards."
+
+  上游直接拿随机 6 字节当节点，首字节最低位有一半概率是 0 ——
+  那就有可能和真实网卡的 MAC 地址撞上，而这条规范存在的唯一目的就是防这个。
+- **修复 v7 在同一毫秒内没有顺序**。RFC 9562 §6.2 专门点名了批量场景：
+
+  > "Take care to ensure UUIDs generated in batches are also monotonic. That is,
+  > if one thousand UUIDs are generated for the same timestamp, there should be
+  > sufficient logic for organizing the creation order of those one thousand UUIDs."
+
+  上游一种方法都没用，所以一次批量生成的 1000 条 v7 在同一毫秒内**排序是随机的** ——
+  而「可按时间排序」正是 v7 相对于 v4 的全部意义。本工具改用 §6.2 的
+  **Method 1（固定位长专用计数器）**：把 `rand_a` 的 12 位当计数器，同一毫秒内每生成
+  一条就加一（时间戳一变就用随机值重新起头），写满 4096 条则把时间戳往前推 1 毫秒
+  （§6.2 允许这么做）。代价是每条只有 62 位真随机而不是 74 位，界面上写明了这一点。
+- **修复校验器放行错位的横线**。上游的正则把 `-?` 逐段可选，于是
+  `123456781234-1234-1234-123456789012` 这种**不是合法 UUID 表示**的串也会被判为合法。
+  现在只接受「五组标准位置」或「32 位连写」两种写法。
+- **修复批量数量不校验**。上游 `Math.min(parseInt(v) || 10, 1000)`：
+  清空输入框静默变回 10、填 5000 静默变 1000，界面上没有任何提示。
+  改用 `T.util.readInt`（标红 + 失焦回退）。
+- **修复复制没有降级**。上游裸调 `navigator.clipboard.writeText`，
+  非安全上下文下会直接抛 TypeError。
+- **不写 BigInt 字面量**。上游把 v1 单独拆成一个文件，理由是「用了 `10000n` 这样的字面量，
+  老引擎**解析**这个文件就会失败，会连累 `uuid-generator.js`」。其实只要改用
+  `BigInt(10000)` 调用形式就没有这个问题 —— 文件在任何引擎上都能解析，
+  缺 BigInt 时只是运行时不可用，可以优雅降级。本项目因此把两个文件收成一个。
+- 顺手把 `substr`（Annex B 的遗留 API）换成 `slice`
+- 新增版本 / 变体的中文名、nil 与 max UUID 的识别、`urn:uuid:` 前缀与花括号的归一化、
+  以及 v7 单调性说明
+- v1 / v4 / v7 三个版本、大写 / 去横线 / 花括号三个格式开关、批量生成、校验器
+  沿用上游设计
+
+> 三处改动都写在**现行规范**上：RFC 9562（2024 年 5 月发布）取代了 RFC 4122。
+> 上游的实现基本是按 RFC 4122 的习惯写的，§6.2 与 §6.10 这两条在 4122 时代
+> 措辞不同，换成 9562 之后就是明确的 MUST / SHOULD。
+
 ---
 
 > 上游另有一套 `js/umd-guard.js` / `js/umd-unguard.js`，在加载内置库时临时屏蔽
@@ -333,9 +482,10 @@
 
 ---
 
-## 二、内置的第三方库
+## 二、内置的第三方资源
 
-均自托管在 `js/vendor/`，不通过 CDN 加载。版本记录见 `js/vendor/vendor.json`。
+包括第三方库与第三方数据文件，均自托管在 `js/vendor/`，不通过 CDN 加载。
+版本、来源与校验和记录在 `js/vendor/vendor.json`。
 
 ### marked
 
@@ -400,12 +550,45 @@
 > 确认上游那份只是压缩形式、逻辑没有改动。这个比对是一次性的取证，
 > 结论记录在此；项目里只保留官方产物一份。
 
+### EFF 长词表
+
+| | |
+|---|---|
+| 版本 | 2016-07-18 发布的版本（内容自发布后未变） |
+| 用途 | 口令短语的单词来源（密码生成器） |
+| 许可 | **CC BY 3.0 US** |
+| 作者 | Electronic Frontier Foundation（EFF），基于 Arnold G. Reinhold 的 Diceware 方法 |
+| 来源 | https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt<br>https://www.eff.org/dice |
+| 文件 | `js/vendor/eff-large-wordlist.js` |
+| 原始文件 sha256 | `addd35536511597a02fa0a9ff1e5284677b8883b83e986e43f15a3db996b903e` |
+| 词列 sha256 | `6d557f0693958fb5e650b68b5bee585eb82cf4da32965505c789e924743bc522` |
+| 本项目文件 sha256 | `8e5b244d4f483dff937858a68e6b35944a2507ff956d2ae1c152bb9df584c82d` |
+
+**这是一份加工过的文件，不是原样复制。** 官方文件是 7776 行「五位掷骰编号 + TAB + 词」，
+本项目只取第二列，按原顺序每行一个词放进 JS 模板字符串，再挂到
+`window.TOOLBOX.wordlists.effLarge`。**没有增删、没有改序、没有改写任何一个词** ——
+所以词数仍是 6⁵ = 7776，每词熵仍是 `log2(7776)` = 12.9248 比特。
+逐词比对的办法见下面「三」。
+
+> **`drop-down`、`felt-tip`、`t-shirt`、`yo-yo` 这 4 个词自带连字符**，这是官方词表的
+> 既有情况，**原样保留** —— 换掉任何一个词，词数就不再是 6⁵，「每词 12.92 比特」
+> 这个数也就对不上了。选连字符当分隔符时，这 4 个词会和分隔符混在一起，
+> 这是这套词表固有的取舍，界面上没有掩饰。
+>
+> **CC BY 3.0 要求署名。** 本项目在工具页的「来源与致谢」、本文件与 `README.md` 里
+> 都注明了出处与许可。若你要再分发本项目，请保留这些署名。
+
+> 为什么不用上游自带的 `js/wordlist.js`：那份只有 529 个词，按字母序排到 `faculty`
+> 就断了（首字母分布 a:100 b:98 c:152 d:91 e:85 f:3），是一份被截断的列表。
+> 它的熵值算法本身没错（`log2(529)` = 9.05 比特/词），但词表不完整 ——
+> 生成出来的词组全以 a–f 开头，而且「约 530 个常见英文单词」这个说明也不成立。
+
 ---
 
-## 三、如何校验内置库
+## 三、如何校验内置资源
 
-三个文件都是从 npm 官方包直接提取的，`js/vendor/vendor.json` 里记录了版本、
-来源路径与 sha256。重新下载后可以这样核对：
+三个库都是从 npm 官方包直接提取的，词表来自 EFF 官网，`js/vendor/vendor.json` 里
+记录了各自的版本、来源与 sha256。重新下载后可以这样核对：
 
 ```bash
 # 下载官方包并校验 tarball 完整性（sha1 取自 registry.npmjs.org）
@@ -430,6 +613,35 @@ curl -sL https://registry.npmjs.org/qrcode-generator/-/qrcode-generator-2.0.4.tg
 sha1sum qr.tgz            # 应为 e8b3f30922577eba52078aa9c0d5a2a74fe1fd94
 tar -xzf qr.tgz package/dist/qrcode.js
 sha256sum package/dist/qrcode.js js/vendor/qrcode.umd.js
+```
+
+### EFF 词表（数据文件，不是 npm 包）
+
+分两步：先核对官方原件的校验和，再核对派生结果**逐词**一致。
+
+```bash
+# ① 官方原件
+curl -sL https://www.eff.org/files/2016/07/18/eff_large_wordlist.txt -o eff_large.txt
+sha256sum eff_large.txt
+#   应为 addd35536511597a02fa0a9ff1e5284677b8883b83e986e43f15a3db996b903e
+
+# ② 只取词列，单独算一次
+cut -f2 eff_large.txt | sha256sum
+#   应为 6d557f0693958fb5e650b68b5bee585eb82cf4da32965505c789e924743bc522
+
+# ③ 把内置文件里的模板字符串抽出来，和官方词列逐词比对（比哈希更能定位问题）
+node -e "
+const fs = require('fs');
+const off = fs.readFileSync('eff_large.txt', 'utf8').split('\n')
+  .filter((l) => l.length).map((l) => l.split('\t')[1]);
+const code = fs.readFileSync('js/vendor/eff-large-wordlist.js', 'utf8');
+const mine = code.match(/effLarge = \`([\s\S]*?)\`\.split/)[1].split('\n');
+console.log('官方', off.length, '内置', mine.length,
+            '逐词一致:', JSON.stringify(off) === JSON.stringify(mine));
+"
+#   应为：官方 7776 内置 7776 逐词一致: true
+
+node --check js/vendor/eff-large-wordlist.js
 ```
 
 > 提示：直接从 CDN / raw 链接下载大文件时容易被截断。**不要**用

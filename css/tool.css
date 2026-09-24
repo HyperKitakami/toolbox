@@ -55,23 +55,31 @@
 }
 
 /* --- 3. 工具主体布局 ----------------------------------------------------- */
+/* 两列等宽。
+   注意用 minmax(0, 1fr) 而不是 1fr —— `1fr` 的实际含义是 `minmax(auto, 1fr)`，
+   它的下限是**内容的 min-content 宽度**。右列里只要有一个不可换行的长内容
+   （表格、代码视图、长串），那一列就会被撑到 min-content，左列被挤成一条窄缝
+   （踩过一次：测试数据生成的表格 min-content 有 1523px，左列只剩 167px，
+   卡片里的文字竖着排）。minmax(0, …) 才是真正的「等分」。
+   容器里放长内容时，长内容自己要带 overflow: auto（.code-view / .table-scroll /
+   .diff-view / .regex-explainer 都已经有了）。 */
 .tool-body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
 @media (max-width: 900px) {
-  .tool-body { grid-template-columns: 1fr; }
+  .tool-body { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* 单栏（全宽）工具：如 diff 对比、正则测试 */
-.tool-body--stack { grid-template-columns: 1fr; }
+.tool-body--stack { grid-template-columns: minmax(0, 1fr); }
 
 /* 输入窄、输出宽 */
-.tool-body--aside { grid-template-columns: minmax(260px, 340px) 1fr; }
+.tool-body--aside { grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); }
 @media (max-width: 900px) {
-  .tool-body--aside { grid-template-columns: 1fr; }
+  .tool-body--aside { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* --- 4. 面板 ------------------------------------------------------------- */
@@ -134,9 +142,13 @@
 }
 
 /* --- 5. 统计结果网格 ----------------------------------------------------- */
+/* 用 auto-fit 而不是 auto-fill：auto-fill 会先按最小宽度切出尽可能多的轨道，
+   格子数不够时就留下一片空轨道（全宽工具里统计挤在左边、右边空一大块）。
+   auto-fit 会把空轨道收掉，格子自己撑满一行；格子数本来就填满容器时两者等价，
+   所以两栏布局里的工具不受影响。 */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 10px;
 }
 
@@ -1507,4 +1519,129 @@ kbd.hint-key {
   border-radius: 6px;
   background: var(--surface);
   object-fit: contain;
+}
+
+/* --- 27. 生成器类工具共用（字符集预览、数值输入、结果列表） -------------- */
+
+/* 窄的等宽数值输入：长度、数量这类整数参数 */
+.input--num {
+  width: 5.5em;
+  min-width: 0;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 实际使用的字符集 / 词表说明：等宽、可换行，超高了内部滚动 */
+.charset-text {
+  display: block;
+  max-height: 88px;
+  overflow: auto;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+  font-family: var(--font-mono);
+  font-size: .84rem;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 结果列表：条数多时内部滚动，不把页面撑长 */
+.scroll-list {
+  margin-top: 0;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+/* 序号只有 #1 这种短标签，标签列收窄一点，把位置让给内容 */
+.scroll-list .value-row { grid-template-columns: 44px 1fr; }
+
+/* 大号可复制的值（密码、UUID 共用）：整块可点，点了就复制。
+   里面**必须套一层 span**，这样 site.js 的复制反馈只会加 data-copied，
+   不会把值本身换成「已复制」 */
+.value-display {
+  display: block;
+  width: 100%;
+  padding: 15px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--bg-inset);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 1.02rem;
+  line-height: 1.7;
+  letter-spacing: .04em;
+  text-align: left;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.value-display:hover { border-color: var(--border-strong); }
+.value-display[data-copied="true"] {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
+  background: var(--ok-soft);
+}
+
+/* --- 28. 密码生成器（强度条） ------------------------------------------- */
+.pg-strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.pg-strength-bar {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 4px;
+}
+.pg-strength-bar i {
+  flex: 1 1 0;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--bg-inset);
+  transition: background var(--dur) var(--ease);
+}
+.pg-strength-label {
+  flex: none;
+  min-width: 2.6em;
+  text-align: right;
+  font-size: .84rem;
+  font-weight: 650;
+}
+/* 四段强度条：段数按等级点亮。
+   注意别把「点亮段」和「给标签上色」写成同一条规则 ——
+   `background` 会把文字标签涂成色块，而靠后写一条 `.pg-strength-label { background: none }`
+   是压不回去的（选择器权重更低）。所以两类声明分开写。 */
+.pg-strength[data-level="1"] .pg-strength-bar i:nth-child(-n+1) { background: var(--danger); }
+.pg-strength[data-level="2"] .pg-strength-bar i:nth-child(-n+2) { background: var(--warn); }
+.pg-strength[data-level="3"] .pg-strength-bar i:nth-child(-n+3) { background: var(--ok); }
+.pg-strength[data-level="4"] .pg-strength-bar i { background: var(--ok); }
+
+.pg-strength[data-level="1"] .pg-strength-label { color: var(--danger); }
+.pg-strength[data-level="2"] .pg-strength-label { color: var(--warn); }
+.pg-strength[data-level="3"] .pg-strength-label { color: var(--ok); }
+.pg-strength[data-level="4"] .pg-strength-label { color: var(--ok); }
+
+/* --- 29. 占位文本生成（正文排版预览） ----------------------------------- */
+/* 占位文本的用途就是看排版，所以结果区换成正文字体而不是等宽字体。
+   只覆盖字体与行高，滚动、内边距、空状态提示都沿用 .output */
+.output--prose {
+  font-family: var(--font-sans);
+  font-size: .95rem;
+  line-height: 1.85;
+  letter-spacing: .01em;
+}
+
+/* --- 30. 测试数据生成（表格预览） --------------------------------------- */
+
+/* 预览表格：自成一块带边框的滚动区，所以去掉 .table-scroll 默认的上分隔线 */
+.table-scroll--boxed {
+  border-top: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  max-height: 52vh;
 }

@@ -4,6 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import {
   ROOT, ok, section, loadPage, count, walk, loadRegistry, relPath, sleep
 } from './_harness.mjs';
@@ -55,11 +56,52 @@ export default async function run() {
   ok('每个已上线工具都有专属测试套件', noTest.length === 0,
      noTest.length ? '缺少 ' + noTest.join(', ') : '');
 
-  /* 反过来也查一下：测试套件不能指向不存在的工具 */
+  /* 反过来也查一下：测试套件不能指向不存在的工具。
+     下面这几个是「共用模块 / 全站」的套件，本来就不对应某个工具，
+     但每个都得有 js/<name>.js 这个模块文件（site.mjs 除外，它测的是全站）。 */
+  const SHARED_SUITES = ['site', 'color-utils', 'random-utils'];
   const orphanTests = testFiles.filter(
-    (f) => f !== 'site' && f !== 'color-utils' && !T.tools.some((t) => t.slug === f)
+    (f) => !SHARED_SUITES.includes(f) && !T.tools.some((t) => t.slug === f)
   );
   ok('没有指向不存在工具的测试套件', orphanTests.length === 0, orphanTests.join(', '));
+
+  const missingModules = SHARED_SUITES
+    .filter((f) => f !== 'site' && !fs.existsSync(path.join(ROOT, 'js', f + '.js')));
+  ok('共用模块套件都对应一个真实存在的模块', missingModules.length === 0,
+     missingModules.join(', '));
+
+  /* ---------- 1b. 资源版本号（防缓存） ---------- */
+  /* 浏览器缓存按 URL 走。文件改了但 URL 不变时，用户可能拿到「新 HTML + 旧 JS」，
+     页面会静默出错（踩过一次：site.js 加了 T.util.readInt，两个生成器工具的结果区
+     直接空白）。所以所有 CSS / JS 引用都要带 ?v=<内容哈希>，由 build-pages.mjs 维护。 */
+  section('1b. 资源版本号');
+
+  const htmlPages = walk(ROOT).filter((f) => /\.html?$/i.test(f));
+  const unstamped = [];
+  const stale = [];
+
+  for (const file of htmlPages) {
+    const html = fs.readFileSync(file, 'utf8');
+    for (const m of html.matchAll(/\s(?:href|src)="([^"]*\.(?:css|js))"/g)) {
+      if (/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(m[1])) continue;   /* 外链不管 */
+      unstamped.push(relPath(file) + ' → ' + m[1]);
+    }
+    for (const m of html.matchAll(/\s(?:href|src)="([^"]+?\.(?:css|js))\?v=([0-9a-f]+)"/g)) {
+      const abs = m[1].startsWith('/')
+        ? path.join(ROOT, m[1].slice(1))
+        : path.resolve(path.dirname(file), m[1]);
+      if (!fs.existsSync(abs)) { stale.push(relPath(file) + ' → ' + m[1] + '（文件不存在）'); continue; }
+      const real = crypto.createHash('sha256').update(fs.readFileSync(abs))
+        .digest('hex').slice(0, 8);
+      if (real !== m[2]) {
+        stale.push(relPath(file) + ' → ' + m[1] + ' 页面上 ' + m[2] + '，实际 ' + real);
+      }
+    }
+  }
+
+  ok('所有 CSS / JS 引用都带版本号', unstamped.length === 0, unstamped.slice(0, 5).join('; '));
+  ok('版本号与文件内容一致（改过资源就要重跑 build-pages）', stale.length === 0,
+     stale.slice(0, 5).join('; '));
 
   /* ---------- 2. 首页 ---------- */
   section('2. 首页');
@@ -210,14 +252,4 @@ export default async function run() {
 
   ok('页脚年份已填充',
      home.d.querySelector('[data-year]').textContent === String(new Date().getFullYear()));
-
-  /* ---------- 6. sitemap ---------- */
-  section('6. sitemap.xml');
-
-  const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
-  for (const t of ready) {
-    ok(`sitemap 收录 /tools/${t.slug}/`, sitemap.includes(`/tools/${t.slug}/`));
-  }
-  ok('sitemap 收录首页与分类页',
-     sitemap.includes('<loc>') && T.hubs.every((h) => sitemap.includes(`/hubs/${h.id}/`)));
 }

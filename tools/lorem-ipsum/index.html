@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>占位文本生成 · 工具箱</title>
+<meta name="description" content="在线占位文本生成器：生成排版预览用的 Lorem ipsum 拉丁文或中文占位文字，可按段落、句子、单词或列表项生成，支持包一层 HTML 标签与导出 .txt。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css?v=058d76e5">
+<link rel="stylesheet" href="../../css/site.css?v=9cec08cc">
+<link rel="stylesheet" href="../../css/tool.css?v=008e23bb">
+<script src="../../js/theme-init.js?v=f8313ac9"></script>
+</head>
+<body data-tool="lorem-ipsum" data-hub="generators">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/generators/">生成器</a>
+      <span class="sep">/</span>
+      <span aria-current="page">占位文本生成</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>占位文本生成</h1>
+        <p class="lead">
+          给排版和原型填充占位文字。拉丁文（Lorem ipsum）与中文两套语料，
+          可以按段落、句子、单词或列表项生成，也能直接包成
+          <code class="mono">&lt;p&gt;</code> / <code class="mono">&lt;ul&gt;</code> 标签或导出 .txt。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">中英双语料</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="tool-body">
+
+        <!-- 左列：配置 -->
+        <div class="tool-stack">
+
+          <!-- 1. 语料 -->
+          <section class="panel">
+            <div class="panel-head">
+              <span class="panel-title">语料</span>
+            </div>
+            <div class="panel-body">
+              <div class="field-stack">
+                <div>
+                  <span class="field-label">语言</span>
+                  <div class="choice-row" id="li-langs" role="group" aria-label="语料语言"></div>
+                </div>
+                <div>
+                  <span class="field-label">这套语料里有什么</span>
+                  <code class="charset-text" id="li-corpus-info"></code>
+                </div>
+              </div>
+            </div>
+            <div class="panel-foot">
+              <span id="li-corpus-note"></span>
+            </div>
+          </section>
+
+          <!-- 2. 生成设置 -->
+          <section class="panel">
+            <div class="panel-head">
+              <span class="panel-title">生成设置</span>
+            </div>
+            <div class="panel-body">
+              <div class="field-stack">
+
+                <div>
+                  <span class="field-label">单位</span>
+                  <div class="choice-row" id="li-units" role="group" aria-label="生成单位"></div>
+                </div>
+
+                <div class="toolbar">
+                  <label class="toolbar-label" for="li-count">数量</label>
+                  <input class="input input--num" type="number" id="li-count"
+                         min="1" max="100" step="1" value="3" inputmode="numeric">
+                  <span class="toolbar-sep"></span>
+                  <span class="hint">1–100</span>
+                </div>
+
+                <label class="switch">
+                  <input type="checkbox" id="li-classic" checked>
+                  <span>以经典开头 <span class="faint" id="li-classic-hint">Lorem ipsum dolor sit amet…</span></span>
+                </label>
+
+                <label class="switch">
+                  <input type="checkbox" id="li-html">
+                  <span>包一层 HTML 标签 <span class="faint">段落用 p，列表用 ul / li</span></span>
+                </label>
+
+              </div>
+            </div>
+            <div class="panel-foot">
+              <span id="li-unit-hint"></span>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- 右列：结果 -->
+        <div class="tool-stack">
+
+          <section class="panel">
+            <div class="panel-head">
+              <span class="panel-title">结果</span>
+              <div class="panel-actions">
+                <button class="btn btn--sm" type="button" id="li-regenerate">重新生成</button>
+                <button class="btn btn--sm" type="button" data-copy-target="#li-output">复制</button>
+                <button class="btn btn--sm" type="button" id="li-download">下载 .txt</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <pre class="output output--prose" id="li-output" data-placeholder="生成的占位文字会显示在这里"></pre>
+              <p class="tool-status" id="li-status"></p>
+            </div>
+            <div class="panel-foot">
+              <span>点「重新生成」会重新打乱语料顺序，同一套设置每次拿到的段落不一样</span>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <span class="panel-title">统计</span>
+            </div>
+            <div class="panel-body">
+              <div class="stat-grid" id="li-stats"></div>
+            </div>
+            <div class="panel-foot">
+              <span>统计的是纯文本，不含 HTML 标签 —— 方便对照目标区块的字数上限</span>
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>Lorem ipsum 是什么</h3>
+        <ul>
+          <li>它是 Cicero《论至善与至恶》（De Finibus Bonorum et Malorum，公元前 45 年）1.10.32–1.10.33 的一段拉丁文，
+            从 16 世纪起被印刷业拿来当校样文字，一直用到今天。</li>
+          <li>之所以用一段<strong>看不懂</strong>的文字，是因为读者一旦去读内容，注意力就从版式上跑掉了。
+            占位文本的意义就在于「看着像正文，但读进去什么都没有」。</li>
+          <li>原文里的 <code class="mono">lorem ipsum</code> 其实是 <code class="mono">dolorem ipsum</code>
+            的截断，属于流传过程中的抄写讹误，不是正经拉丁文。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>中文占位为什么要单独做一套</h3>
+        <ul>
+          <li>把 Lorem ipsum 直接铺进中文版面，看不出真正的问题：中文没有词间空格、标点占一个全角字宽、
+            行首行尾还有禁则处理，这些在拉丁文里都不存在。</li>
+          <li>所以这里的<strong>中文语料是本项目自己写的</strong>：内容是围绕排版与阅读的中性叙述，
+            看起来是正常的现代汉语散文，实际不含任何信息，也不引用任何受版权保护的作品。</li>
+          <li>中文没有天然的词边界，所以中文下不提供「单词」这一档 —— 按空格切出来的不是词，按字数切出来的也不是。
+            需要短句时用「列表项」。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>几种单位怎么用</h3>
+        <ul>
+          <li><strong>段落</strong> —— 撑满一块正文区域，看行距、段间距与整体灰度。</li>
+          <li><strong>句子</strong> —— 拼成一段连续文字，适合测单行长度（每行多少个字比较舒服）。</li>
+          <li><strong>单词</strong> —— 只出词，适合测字体的字面宽度与字距（仅拉丁文）。</li>
+          <li><strong>列表项</strong> —— 从句子里截出短标签，用来填导航、卡片标题、下拉菜单这类位置。</li>
+          <li>勾上「包一层 HTML 标签」后会直接输出 <code class="mono">&lt;p&gt;</code> 或
+            <code class="mono">&lt;ul&gt;&lt;li&gt;</code>，可以整段粘进模板里。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <p>
+          本工具的功能设计与交互移植自
+          <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+          的 Lorem Ipsum Generator（MIT 许可），在此做了中文化、界面统一，并修掉了若干缺陷 ——
+          详见 <code class="mono">THIRD-PARTY.md</code>。
+        </p>
+        <p>
+          拉丁语料前 6 段出自 Cicero 原文（公有领域）；后 2 段是网络模板里流传的另一套拉丁填充句，
+          出处不可考，本次把标注改准、数据原样保留。中文语料为本项目自撰。
+          两套语料都在 <code class="mono">js/lorem-corpus.js</code> 里，不通过 CDN 加载。
+        </p>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js?v=47db4daa" defer></script>
+<script src="../../js/random-utils.js?v=f50f23af" defer></script>
+<script src="../../js/lorem-corpus.js?v=d308fb08" defer></script>
+<script src="../../js/site.js?v=78db1b55" defer></script>
+<script src="../../js/tools/lorem-ipsum.js?v=d7975103" defer></script>
+</body>
+</html>

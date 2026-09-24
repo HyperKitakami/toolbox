@@ -360,20 +360,8 @@
 
   function download() {
     if (!rawOutput) { T.util.toast('还没有可下载的内容'); return; }
-    try {
-      var blob = new Blob([rawOutput], { type: 'application/json;charset=utf-8' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'formatted.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      T.util.toast('已开始下载');
-    } catch (e) {
-      T.util.toast('当前环境不支持下载');
-    }
+    var ok = T.util.download('formatted.json', rawOutput, 'application/json;charset=utf-8');
+    T.util.toast(ok ? '已开始下载' : '当前环境不支持下载');
   }
 
   function readFile(file) {

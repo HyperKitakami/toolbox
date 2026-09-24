@@ -30,7 +30,6 @@ tools-box/
 ├── index.html                 首页：Hero + 分类 + 全部工具
 ├── 404.html                   注意：用根绝对路径，不参与页头页脚同步
 ├── favicon.svg
-├── robots.txt / sitemap.xml   由脚本生成
 ├── LICENSE                    MIT 许可与版权声明
 ├── THIRD-PARTY.md             ★ 第三方代码的来源、版本、许可与改动清单
 ├── css/
@@ -42,14 +41,23 @@ tools-box/
 │   ├── registry.js            ★ 唯一数据源：分类 + 工具清单
 │   ├── site.js                主题、导航、卡片渲染、搜索、公共工具方法
 │   ├── color-utils.js         颜色换算、对比度与混合模式（颜色类工具共用）
-│   ├── vendor/                自托管的第三方库（见 THIRD-PARTY.md）
+│   ├── random-utils.js        随机取样与字符集（生成器类工具共用）
+│   ├── lorem-corpus.js        占位文本语料（拉丁 + 中文）
+│   ├── mock-data-corpus.js    测试数据语料（姓氏、地名、公司词…）
+│   ├── vendor/                自托管的第三方资源（见 THIRD-PARTY.md）
 │   │   ├── marked.umd.js      Markdown 解析
 │   │   ├── purify.min.js      HTML 净化
+│   │   ├── eff-large-wordlist.js  EFF 长词表（口令短语用，7776 词）
 │   │   └── vendor.json        版本、来源与 sha256 记录
 │   └── tools/
 │       ├── _template.js       工具逻辑模板
 │       ├── word-counter.js    自研
 │       ├── diff-checker.js    自研
+│       ├── random-string.js   自研
+│       ├── mock-data.js       自研
+│       ├── password-generator.js 移植
+│       ├── lorem-ipsum.js     移植
+│       ├── uuid-generator.js  移植
 │       ├── regex-tester.js    移植
 │       ├── json-formatter.js  移植
 │       ├── markdown-to-html.js 移植
@@ -62,7 +70,7 @@ tools-box/
 ├── about/  privacy/
 └── scripts/
     ├── chrome.mjs             页头页脚的唯一来源
-    ├── build-pages.mjs        生成分类页 + 同步页头页脚 + 生成 sitemap
+    ├── build-pages.mjs        生成分类页 + 同步页头页脚 + 给资源加版本号
     ├── test.mjs               测试运行器
     └── tests/                 测试套件：site.mjs 管全站，每个工具一个文件
 ```
@@ -75,7 +83,7 @@ tools-box/
 | 安全 | — | 8 | 0 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | — | 6 | 0 |
-| 生成器 | 二维码生成 | 5 | 0 |
+| 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
 | 文本 | 字数统计 | 6 | 0 |
 
 完整清单见 `js/registry.js`。三种状态在站点上的表现：
@@ -107,20 +115,27 @@ tools-box/
 | 调色板生成 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `palette-generator` | MIT |
 | 渐变生成器 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `gradient-generator` | MIT |
 | 二维码生成 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `qr-generator` + `qrcode-generator` | MIT |
+| 密码生成器 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `password-generator` + [EFF 长词表](https://www.eff.org/dice) | MIT / CC BY 3.0 US |
+| 占位文本生成 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `lorem-ipsum` + Cicero 原文 | MIT / 公有领域 |
+| UUID 生成器 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `uuid-generator` | MIT |
 | 文本差异对比 | 自研 | — |
 | 字数统计 | 自研 | — |
+| 随机字符串 | 自研 | — |
+| 测试数据生成 | 自研 | — |
 
-## 内置的第三方库
+## 内置的第三方资源
 
 自托管在 `js/vendor/`，不通过 CDN 加载。版本与校验和记录在 `js/vendor/vendor.json`。
 
-| 库 | 版本 | 用途 | 许可 |
+| 资源 | 版本 | 用途 | 许可 |
 |---|---|---|---|
 | [marked](https://github.com/markedjs/marked) | 18.0.13 | Markdown 解析 | MIT |
 | [DOMPurify](https://github.com/cure53/DOMPurify) | 3.4.15 | HTML 净化 | Apache-2.0 OR MPL-2.0 |
 | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | 2.0.4 | 二维码编码 | MIT |
+| [EFF 长词表](https://www.eff.org/dice) | 2016-07-18 | 口令短语的单词来源（7776 词） | CC BY 3.0 US |
 
-> 注意 DOMPurify **不是 MIT**。再分发本项目时需同时遵守它的许可条款。
+> 注意 DOMPurify **不是 MIT**，EFF 词表要求**署名**。
+> 再分发本项目时需同时遵守这两者的许可条款。
 
 完整的来源、改动清单与校验方法见 **[THIRD-PARTY.md](THIRD-PARTY.md)**。
 
@@ -132,23 +147,33 @@ tools-box/
    然后在页面底部按顺序引入它（`registry.js` → `site.js` → 你的脚本）。
 3. **注册**：打开 `js/registry.js`，在 `TOOLS` 数组里把对应那一行的状态
    从 `'planned'` 改成 `'ready'`。首页、分类页、搜索会自动收录。
+4. **重建**：跑一次 `node scripts/build-pages.mjs`，把新页面的资源引用补上版本号
+   （忘了跑的话 `node scripts/test.mjs` 会红）。
 
 `slug` 必须与目录名一致，用短横线小写英文。
 
 ## 维护脚本
 
-改了页头或页脚（`scripts/chrome.mjs`）之后跑一次：
+改了页头或页脚（`scripts/chrome.mjs`）、**或者改了任何 CSS / JS 文件**之后跑一次：
 
 ```bash
 node scripts/build-pages.mjs
 ```
 
 它会：
+
 1. 依据 `js/registry.js` 重新生成 `hubs/<id>/index.html`；
 2. 把页头页脚同步进所有 HTML 的 `<!-- chrome:header:start -->` 标记区间；
-3. 重新生成 `sitemap.xml` 与 `robots.txt`。
+3. 给所有 CSS / JS 引用补上内容版本号（`?v=<sha256 前 8 位>`）。
 
-部署前记得把 `scripts/build-pages.mjs` 顶部的 `SITE_URL` 改成真实域名。
+第 3 步是防缓存用的。浏览器缓存按 URL 走，文件改了但 URL 不变时，
+用户可能拿到「新 HTML + 旧 JS」的组合，页面会**静默出错** ——
+曾经因为给 `site.js` 加了 `T.util.readInt`，两个生成器工具的结果区直接变成空白，
+控制台只有一行 `TypeError`，光看页面完全看不出问题在哪。
+版本号取文件内容哈希，所以只有文件真的变了 URL 才变。
+
+`node scripts/test.mjs` 会校验版本号与文件内容是否对得上，
+**改了资源却忘了重跑 `build-pages.mjs` 会直接红**。
 
 ## 测试
 
@@ -195,7 +220,7 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 [Iris Digital](https://irisdigital.tech/) 构建并维护的隐私优先工具集，
 同样以 MIT 许可开源。本项目的整体形态（纯静态、零依赖、100% 客户端运行、
 一个工具一个目录加一个脚本）直接参考了它的做法，
-目前有十二个工具是基于它移植而来：
+目前有十五个工具是基于它移植而来：
 
 - **正则表达式测试** ← `regex-tester`：沿用其模式解释算法、界面结构与交互流程
 - **JSON 格式化** ← `json-formatter`：沿用其格式化 / 压缩 / 校验的功能划分与粘贴即格式化
@@ -214,8 +239,14 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
   并修好添加色标的位置缺陷
 - **二维码生成** ← `qr-generator`：沿用其九种内容类型、中心 Logo 与导出，
   预览改用 SVG，并把内置库换成 npm 官方产物
+- **密码生成器** ← `password-generator`：沿用其双模式、长度滑杆、字符类别开关与批量生成，
+  并把只覆盖 A–F 的上游词表换成 EFF 官方 7776 词长词表
+- **占位文本生成** ← `lorem-ipsum`：沿用其四种单位、以经典开头与 HTML 包裹，
+  补上中文语料与中文界面，结果区换成正文字体
+- **UUID 生成器** ← `uuid-generator`：沿用其三个版本、三个格式开关、批量与校验器，
+  并按 RFC 9562 补上 v7 的同毫秒单调计数器与 v1 的节点多播位
 
-十二者都做了中文化、设计系统统一，并修复了上游缺陷 ——
+十五者都做了中文化、设计系统统一，并修复了上游缺陷 ——
 正则工具修掉了空匹配死循环与分享链接 base64 填充导致的参数丢失；
 JSON 工具重写了语法高亮（上游因为「先转义再匹配」导致键名与字符串值完全不着色）；
 Markdown 工具移除了 Prism 依赖，改用内置的轻量 HTML 着色；
@@ -229,9 +260,20 @@ Markdown 预览补上了 localStorage 容错，修正了「清空」按钮的语
 调色板生成修掉了配色里主色偏一档的取整误差，并把劫持空格滚动的快捷键换成 R 键；
 渐变生成器修掉了「添加色标落在 100%、与末尾完全重合」这个让按钮看起来失效的缺陷；
 二维码生成补上了 iCalendar / vCard 的文本转义，并把预览从 canvas 换成 SVG，
-顺手换掉了上游那份删掉版权声明、又无法用哈希校验的内置库。
+顺手换掉了上游那份删掉版权声明、又无法用哈希校验的内置库；
+密码生成器修掉了取字符的模偏差、字符集为空时静默给一串小写字母、
+复制没有降级、自定义分隔符清不掉、非法数值不校验、批量条数静默截断，
+以及爆破时间分档表只到「数十亿年」这几处，并把截断到 A–F 的词表换成 EFF 官方长词表；
+占位文本生成修掉了会让整个脚本在旧 Safari 上加载失败的后行断言、
+「单词」单位下 HTML 开关静默失效、超量时整块重复、数量不校验与复制没有降级，
+并把被误标成 Cicero 原文的两段语料标注改准、补上中文语料；
+UUID 生成器按 RFC 9562 补上了 v1 节点标识的单播/多播位（原文是 MUST）、
+v7 在同一毫秒内的单调计数器（RFC 明确点名了批量场景）、
+校验器对错位横线的放行，以及批量数量不校验，并把上游为规避 BigInt 字面量
+而拆出的两个文件收成一个。
 
-**库的作者们**：[marked](https://github.com/markedjs/marked)（MarkedJS、Christopher Jeffrey）
-与 [DOMPurify](https://github.com/cure53/DOMPurify)（Cure53）。
+**库与数据的作者们**：[marked](https://github.com/markedjs/marked)（MarkedJS、Christopher Jeffrey）、
+[DOMPurify](https://github.com/cure53/DOMPurify)（Cure53），以及
+[EFF](https://www.eff.org/dice) 整理的 Diceware 长词表（CC BY 3.0 US）。
 
 也感谢所有坚持把工具做成「数据不出浏览器」的人。

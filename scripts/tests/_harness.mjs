@@ -113,7 +113,10 @@ export async function loadPage(rel, opts = {}) {
     for (const k of Object.keys(opts.storage)) w.localStorage.setItem(k, opts.storage[k]);
   }
 
-  const srcs = [...html.matchAll(/<script src="([^"]+)"[^>]*><\/script>/g)].map((m) => m[1]);
+  /* 页面里的资源引用带 ?v=<hash> 版本号（防缓存，见 build-pages.mjs），
+     解析成文件路径时要把查询串去掉 */
+  const srcs = [...html.matchAll(/<script src="([^"]+)"[^>]*><\/script>/g)]
+    .map((m) => m[1].split('?')[0]);
   for (const s of srcs) {
     const p = s.startsWith('/') ? path.join(ROOT, s) : path.resolve(path.dirname(abs), s);
     let code;

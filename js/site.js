@@ -567,7 +567,61 @@
     return s ? m + ' 分 ' + s + ' 秒' : m + ' 分钟';
   }
 
-  /* --- 12. 杂项 ---------------------------------------------------------- */
+  /* --- 12. 受限整数输入 -------------------------------------------------- */
+
+  /**
+   * 读一个带上下限的整数输入框的值（随机字符串 / 密码生成器共用）。
+   *
+   * 非法（空、非数字、小数、越界）时给输入框加上 `.input--invalid` 标红，
+   * 并返回**就近的合法值** —— 这样调用方的渲染逻辑不会因为输入非法而崩。
+   * 调用方在 `blur` 时把返回值写回输入框、再移除标红即可。
+   *
+   * @param {HTMLInputElement} el
+   * @param {number} min
+   * @param {number} max
+   * @returns {number}
+   */
+  function readInt(el, min, max) {
+    var raw = String(el.value).trim();
+    var n = Number(raw);
+    var valid = raw !== '' && isFinite(n) && n === Math.floor(n) && n >= min && n <= max;
+    el.classList.toggle('input--invalid', !valid);
+    if (valid) return n;
+    if (raw === '' || !isFinite(n)) return min;
+    return Math.max(min, Math.min(max, Math.round(n)));
+  }
+
+  /* --- 13. 文本下载 ------------------------------------------------------ */
+
+  /**
+   * 触发一次文本下载（CSV 查看器 / JSON 格式化 / 占位文本生成共用）。
+   *
+   * 用 Blob + createObjectURL 而不是 data: URL —— 长文本的 data: URL 会非常长，
+   * 部分浏览器对长度有限制。用完立刻 revoke，避免内存泄漏。
+   *
+   * @param {string} filename 下载文件名
+   * @param {string} text     文件内容
+   * @param {string} [mime]   默认 text/plain;charset=utf-8
+   * @returns {boolean} 是否成功触发；环境不支持时返回 false，由调用方给提示
+   */
+  function download(filename, text, mime) {
+    try {
+      var blob = new Blob([text], { type: mime || 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* --- 14. 杂项 ---------------------------------------------------------- */
   function initMisc() {
     var y = String(new Date().getFullYear());
     $$('[data-year]').forEach(function (el) { el.textContent = y; });
@@ -600,6 +654,8 @@
     emptyHint: emptyHint,
     readingMinutes: readingMinutes,
     formatDuration: formatDuration,
+    readInt: readInt,
+    download: download,
     $: $,
     $$: $$
   };

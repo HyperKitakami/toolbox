@@ -574,9 +574,11 @@
 }
 .empty-state strong { display: block; color: var(--text); margin-bottom: 6px; }
 
+/* 提示条。约定是「图标 + 一个文本块」，但这里**用 float 排图标而不是 flex** ——
+   flex 下每个子节点（含裸的文本节点）都会变成一个 flex item，文字要是散着写进来，
+   就会被拆成并排的好几列；栏一窄，每列窄到一字一行，整段看起来是竖着排的。
+   float 下无论怎么散着写，文字都按正常流排版，写错了也不会塌。 */
 .notice {
-  display: flex;
-  gap: 11px;
   padding: 14px 16px;
   border-radius: var(--r);
   border: 1px solid var(--border);
@@ -584,7 +586,14 @@
   font-size: .875rem;
   color: var(--text-muted);
 }
-.notice svg { width: 17px; height: 17px; flex: none; margin-top: 2px; color: var(--accent); }
+.notice::after { content: ""; display: block; clear: both; }
+.notice svg {
+  float: left;
+  width: 17px;
+  height: 17px;
+  margin: 3px 11px 0 0;
+  color: var(--accent);
+}
 .notice strong { color: var(--text); }
 
 /* --- 10. 404 ------------------------------------------------------------- */

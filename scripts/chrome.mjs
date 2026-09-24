@@ -101,7 +101,6 @@ ${hubLinks}
       <div class="footer-links">
         <a href="${p}about/">关于</a>
         <a href="${p}privacy/">隐私</a>
-        <a href="${p}sitemap.xml">站点地图</a>
       </div>
     </div>
   </div>

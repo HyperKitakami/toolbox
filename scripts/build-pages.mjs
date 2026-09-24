@@ -5,20 +5,22 @@
    做三件事：
      1. 依据 js/registry.js 生成 6 个分类页 hubs/<id>/index.html
      2. 把 scripts/chrome.mjs 里的页头/页脚同步进所有 HTML 的标记区间
-     3. 生成 sitemap.xml 与 robots.txt
+     3. 给所有 CSS / JS 引用补上内容版本号（?v=<sha256 前 8 位>）
+
+   第 3 步是防缓存用的：浏览器缓存按 URL 走，文件改了但 URL 没变时，
+   可能拿到「新 HTML + 旧 JS」的组合 —— 页面会**静默出错**。
+   踩过一次：给 site.js 加了 T.util.readInt，两个生成器工具的结果区直接空白，
+   控制台只有一行 TypeError，光看页面完全看不出问题在哪。
+   版本号取文件内容哈希，所以只有文件真的变了 URL 才变，diff 不会天天翻。
 
    用法：  node scripts/build-pages.mjs
    ========================================================================== */
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { header, footer } from './chrome.mjs';
-
-/* --------------------------------------------------------------------------
-   站点线上地址：部署前改成你自己的域名（末尾不带斜杠）
-   -------------------------------------------------------------------------- */
-const SITE_URL = 'https://example.com';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -68,6 +70,12 @@ function replaceRegion(html, startMark, endMark, content) {
 }
 
 /* --- 1. 生成分类页 ------------------------------------------------------- */
+
+/** 带版本号的资源 URL；rel 相对站点根，p 是页面到根的相对前缀 */
+function assetUrl(p, rel) {
+  return p + rel + '?v=' + assetHash(path.join(ROOT, rel));
+}
+
 function hubPage(hub) {
   const p = '../../';
   const total = hub.totalCount;
@@ -85,9 +93,9 @@ function hubPage(hub) {
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="${p}favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="${p}css/base.css">
-<link rel="stylesheet" href="${p}css/site.css">
-<script src="${p}js/theme-init.js"></script>
+<link rel="stylesheet" href="${assetUrl(p, 'css/base.css')}">
+<link rel="stylesheet" href="${assetUrl(p, 'css/site.css')}">
+<script src="${assetUrl(p, 'js/theme-init.js')}"></script>
 </head>
 <body data-hub="${hub.id}">
 <a class="skip-link" href="#main">跳到主要内容</a>
@@ -132,8 +140,8 @@ ${MARK.fs}
 ${footer(p)}
 ${MARK.fe}
 
-<script src="${p}js/registry.js" defer></script>
-<script src="${p}js/site.js" defer></script>
+<script src="${assetUrl(p, 'js/registry.js')}" defer></script>
+<script src="${assetUrl(p, 'js/site.js')}" defer></script>
 </body>
 </html>
 `;
@@ -162,35 +170,47 @@ function syncChrome(files) {
   return changed;
 }
 
-/* --- 3. sitemap.xml / robots.txt ---------------------------------------- */
-function writeSitemap(T, extraPages) {
-  const urls = [
-    '/',
-    ...T.hubs.map((h) => `/hubs/${h.id}/`),
-    ...T.readyTools().map((t) => `/tools/${t.slug}/`),
-    ...extraPages
-  ];
-  const today = new Date().toISOString().slice(0, 10);
+/* --- 3. 给资源引用加内容版本号 ------------------------------------------- */
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((u) => `  <url>
-    <loc>${SITE_URL}${u}</loc>
-    <lastmod>${today}</lastmod>
-  </url>`).join('\n')}
-</urlset>
-`;
-  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), xml, 'utf8');
+const hashCache = new Map();
 
-  const robots = `# robots.txt
-User-agent: *
-Allow: /
+/** 文件内容的 sha256 前 8 位；同一个文件只算一次 */
+function assetHash(abs) {
+  if (!hashCache.has(abs)) {
+    hashCache.set(abs, crypto.createHash('sha256')
+      .update(fs.readFileSync(abs)).digest('hex').slice(0, 8));
+  }
+  return hashCache.get(abs);
+}
 
-Sitemap: ${SITE_URL}/sitemap.xml
-`;
-  fs.writeFileSync(path.join(ROOT, 'robots.txt'), robots, 'utf8');
+/* 只认 href / src 且以 .css / .js 结尾的本地引用。
+   已带的 ?v= 会被替换掉，所以这一步是幂等的。 */
+const ASSET_RE = /(\s(?:href|src)=")([^"]*?\.(?:css|js))(?:\?v=[0-9a-f]+)?(")/g;
 
-  return urls.length;
+function stampAssets(html, file) {
+  return html.replace(ASSET_RE, (whole, pre, ref, post) => {
+    if (/^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(ref)) return whole;   /* 外链不动 */
+    const abs = ref.startsWith('/')
+      ? path.join(ROOT, ref.slice(1))
+      : path.resolve(path.dirname(file), ref);
+    if (!fs.existsSync(abs)) return whole;   /* 找不到就不动，缺文件由测试去报 */
+    return pre + ref + '?v=' + assetHash(abs) + post;
+  });
+}
+
+function syncAssets(files) {
+  let changed = 0;
+  for (const file of files) {
+    if (!/\.html?$/i.test(file)) continue;
+    const before = fs.readFileSync(file, 'utf8');
+    const after = stampAssets(before, file);
+    if (after !== before) {
+      fs.writeFileSync(file, after, 'utf8');
+      changed++;
+      console.log(`  资源版本号已更新  ${toPosix(path.relative(ROOT, file))}`);
+    }
+  }
+  return changed;
 }
 
 /* --- 主流程 ------------------------------------------------------------- */
@@ -209,13 +229,11 @@ function main() {
   const changed = syncChrome(walk(ROOT));
   if (!changed) console.log('   已是最新，无需改动');
 
-  console.log('3) 生成 sitemap.xml / robots.txt');
-  const n = writeSitemap(T, ['/about/', '/privacy/']);
+  console.log('3) 给 CSS / JS 引用补版本号');
+  const stamped = syncAssets(walk(ROOT));
+  if (!stamped) console.log('   已是最新，无需改动');
 
-  console.log(`\n完成。已上线 ${T.readyTools().length} 个工具，规划中 ${T.tools.length - T.readyTools().length} 个，sitemap 收录 ${n} 个地址。`);
-  if (SITE_URL.includes('example.com')) {
-    console.log('提示：scripts/build-pages.mjs 顶部的 SITE_URL 还是占位域名，部署前记得改。');
-  }
+  console.log(`\n完成。已上线 ${T.readyTools().length} 个工具，规划中 ${T.tools.length - T.readyTools().length} 个。`);
 }
 
 main();
