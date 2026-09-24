@@ -69,7 +69,10 @@ export default async function run() {
     const el = $('#ts-input');
     el.value = v;
     el.dispatchEvent(new w.Event('input', { bubbles: true }));
-    await sleep(170);                        /* 输入走 90ms 防抖 */
+    /* 输入走 90ms 防抖。这里留到 300ms：全量测试跑到这个套件时进程里已经
+       加载过几十个 jsdom 页面，CPU 一忙 170ms 就可能不够 —— 踩过一次
+       「刚刚」偶发失败（读到的是上一次渲染的结果），单独跑这个套件却始终通过。 */
+    await sleep(300);
   };
   const setUnit = async (id) => click('#ts-units [data-unit="' + id + '"]');
   const setBatch = async (v) => {
@@ -275,7 +278,9 @@ export default async function run() {
   await setInput(String(Math.ceil(Date.now() / 1000) + 7200));
   ok('2 小时后', get('相对现在') === '2 小时后', get('相对现在'));
   await setInput(String(Math.floor(Date.now() / 1000)));
-  ok('刚刚', get('相对现在') === '刚刚', get('相对现在'));
+  ok('刚刚', get('相对现在') === '刚刚',
+     'rel=' + JSON.stringify(get('相对现在')) + ' 行数=' + rowEls().length +
+     ' 状态=' + JSON.stringify(status()) + ' 输入=' + JSON.stringify($('#ts-input').value));
   await setInput(String(Math.floor(Date.now() / 1000) - 86400 * 3));
   ok('3 天前', get('相对现在') === '3 天前', get('相对现在'));
   await setInput(String(Math.floor(Date.now() / 1000) - 31536000 * 2));

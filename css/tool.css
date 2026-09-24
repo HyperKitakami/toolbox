@@ -937,13 +937,15 @@ kbd.hint-key {
 
 /* --- 19. 各容器里的空状态提示（共用排版） ------------------------------- */
 /* 用在哪：.code-empty（代码视图）、.table-empty（表格）、.outline-empty（大纲）、
-   .match-empty（匹配列表）、.regex-explainer-empty（模式解释）、.md-empty（预览） */
+   .match-empty（匹配列表）、.regex-explainer-empty（模式解释）、.md-empty（预览）、
+   .kv-empty（KCWiki 语音台词：筛选后一条都不剩） */
 .code-empty,
 .table-empty,
 .outline-empty,
 .match-empty,
 .regex-explainer-empty,
-.md-empty {
+.md-empty,
+.kv-empty {
   padding: 30px 14px;
   text-align: center;
   font-size: .88rem;
@@ -952,7 +954,8 @@ kbd.hint-key {
 }
 .code-empty strong,
 .table-empty strong,
-.md-empty strong {
+.md-empty strong,
+.kv-empty strong {
   display: block;
   margin-bottom: 5px;
   color: var(--text);
@@ -1743,4 +1746,382 @@ kbd.hint-key {
 /* 「自定义进制」的数值输入：默认藏在胶囊下面，选中「自定义」才出现 */
 .bc-custom {
   margin-top: 8px;
+}
+
+/* --- 35. 空白清理 ------------------------------------------------------- */
+
+/* 按钮的「已开启」态。aria-pressed 是布尔状态的标准写法，
+   用在这里比再加一个 .is-on 类名更省事，读屏也能读出「按下」状态。 */
+.btn[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 16%, transparent);
+  border-color: color-mix(in srgb, var(--hub-accent, var(--accent)) 45%, var(--border));
+  color: var(--hub-accent, var(--accent));
+  font-weight: 650;
+}
+
+/* 选项行：左侧是分组名，右侧是胶囊组。
+   固定 84px 的标签列在窄屏会把胶囊挤到两三个字宽，所以窄屏改成上下两行。 */
+.opt-grid { display: grid; gap: 12px; }
+
+.opt-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+.opt-label {
+  padding-top: 5px;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+/* 选项行里跟在胶囊后面的小字说明（「仅 X 时有效」「0 = 不限」这类） */
+.opt-note {
+  align-self: center;
+  font-size: .78rem;
+  color: var(--text-faint);
+}
+.ws-tab-width {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .78rem;
+  color: var(--text-faint);
+}
+@media (max-width: 560px) {
+  .opt-row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .opt-label { padding-top: 0; }
+}
+
+/* 检测报告：码位用等宽，次数右对齐方便竖着比大小，
+   「处理」列按是否已处理上色 —— 用户关掉某个选项后能立刻看到它变成「已保留」。 */
+.ws-report .ws-cp {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+.ws-report .ws-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* 字符名可能带别名，窄屏允许换行，否则会被 nowrap 截成省略号 */
+.ws-report .data-table td:nth-child(2) { white-space: normal; }
+.ws-alias {
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  color: var(--text-faint);
+}
+.ws-act--done { color: var(--ok); }
+.ws-act--kept { color: var(--warn); }
+
+/* 「显示不可见字符」视图里的记号 */
+.ws-mark { color: var(--text-faint); }
+.ws-residue {
+  padding: 0 2px;
+  border-radius: var(--r-sm);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: .74rem;
+}
+
+/* --- 36. 文本大小写转换 ------------------------------------------------- */
+
+/* 结果行是「标签 + 值」，整行可点即复制。
+   标签是 camelCase / CONSTANT_CASE 这类术语，比通用的 58px 宽，用等宽字体更好认；
+   值是单行标识符或整段文本（后者带换行），所以顶部对齐 + pre-wrap。 */
+.tc-list { margin-top: 0; }
+.tc-list .value-row {
+  grid-template-columns: minmax(96px, 132px) minmax(0, 1fr);
+  align-items: start;
+  padding: 8px 11px;
+}
+.tc-list .value-label {
+  padding-top: 2px;
+  font-family: var(--font-mono);
+  font-size: .72rem;
+  letter-spacing: 0;
+}
+.tc-list .value-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.6;
+}
+
+/* 切出来的词元：结果不符合预期时，用户一眼能看出是切词切错了还是转换错了 */
+.tc-tokens {
+  margin: 10px 0 0;
+  font-size: .78rem;
+  line-height: 1.6;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+.tc-tokens:empty { display: none; }
+
+/* --- 37. KCWiki 语音台词（条目卡片、分组、自定义场合） ------------------ */
+/* 52 条场合、每条两个输入框，属于数据密集的一类，页面用 .tool-stack 全宽堆叠。
+
+   条目卡片刻意**不设 display** —— 筛选时靠 `hidden` 属性整条隐藏，
+   一旦给 .kv-card 设了 display，`hidden` 就会被压过去（同一份 CSS 里的
+   .kv-group-body 就设了 grid，所以分组折叠走 .kv-group--collapsed 类，不用 hidden）。
+   按钮里的 .kv-caret 与 `data-status` 的配色都用 base.css 的令牌，深色模式自动成立。 */
+
+.kv-stats { margin-top: 16px; }
+
+/* 清空是不可撤销的，所以走面板内的两步确认条，不用 modal */
+.kv-confirm {
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  border-radius: var(--r);
+  background: var(--danger-soft);
+}
+.kv-confirm[data-open="true"] { display: flex; }
+.kv-confirm-text {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-size: .85rem;
+  line-height: 1.65;
+  color: var(--text);
+}
+.kv-confirm-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* 破坏性操作：平时是中性按钮，指上去才变红，避免误点 */
+.kv-danger { color: var(--danger); }
+.kv-danger:hover {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  color: var(--danger);
+}
+
+.kv-toolbar { margin-bottom: 14px; }
+
+.kv-groups { display: grid; gap: 16px; }
+
+.kv-group-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-strong);
+  /* 整行都可点（JS 里把标题、计数、空白处都接到分组折叠上），
+     只是「全部省略 / 取消省略」两个按钮要排在前面的分支里挡掉 */
+  cursor: pointer;
+}
+.kv-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: .95rem;
+  font-weight: 660;
+}
+/* 分组的箭头比条目卡片里的大一点、深一点 —— 它是这一整行的唯一可折叠信号 */
+.kv-group-toggle .kv-caret {
+  font-size: .74rem;
+  color: var(--text-muted);
+}
+.kv-group-head:hover .kv-group-toggle { color: var(--hub-accent, var(--accent)); }
+.kv-group-count { font-size: .8rem; color: var(--text-faint); }
+.kv-group-actions { display: flex; gap: 6px; margin-left: auto; }
+.kv-group-body { display: grid; gap: 8px; margin-top: 10px; }
+.kv-group--collapsed .kv-group-body { display: none; }
+
+/* 折叠箭头：卡片与分组共用 */
+.kv-caret {
+  flex: none;
+  font-size: .68rem;
+  line-height: 1;
+  color: var(--text-faint);
+  transition: transform var(--dur) var(--ease);
+}
+.kv-card--collapsed .kv-caret,
+.kv-group--collapsed .kv-caret { transform: rotate(-90deg); }
+
+.kv-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+}
+/* 左边的色条就是完成度：绿=已完成、琥珀=缺一边、灰=还没填、淡+半透明=已整条省略 */
+.kv-card[data-status="complete"] { border-left: 3px solid var(--ok); }
+.kv-card[data-status="partial"]  { border-left: 3px solid var(--warn); }
+.kv-card[data-status="empty"]    { border-left: 3px solid var(--border-strong); }
+.kv-card[data-status="omitted"]  { border-left: 3px solid var(--border); opacity: .62; }
+
+/* 卡片常驻行 —— 卡片收起来时，这一行是唯一还在的内容。
+   所以「整条省略」开关住在这一行里，而不是跟着正文一起被折叠（见 .kv-omit）。 */
+.kv-card-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  transition: background var(--dur) var(--ease);
+}
+.kv-card-head:hover { background: var(--bg-inset); }
+.kv-card--collapsed .kv-card-head { border-bottom: none; }
+
+/* 展开 / 收起这一条的主按钮：占掉常驻行里除开关之外的宽度。
+   常驻行不能整个做成 <button>（按钮里塞不了复选框），于是拆成两层 */
+.kv-card-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text);
+  text-align: left;
+}
+
+/* 常驻行右侧的省略开关：卡片收起时也能勾。
+   长句「此场合不存在，整体省略」放不下卡片头，收短成「整条省略」，
+   完整说法留在 title 与页面说明里 */
+.kv-omit {
+  flex: none;
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+  font-size: .78rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.kv-omit-text { line-height: 1.2; }
+/* 折叠时正文整块收起。
+   **这条规则是必需的** —— 少了它，折叠只会「箭头转 90°、去掉分隔线」，
+   正文照样显示，用户看到的就是「点了没反应」。而 jsdom 不计算样式表，
+   测试里光断言 `classList.contains('kv-card--collapsed')` 根本发现不了（已踩）。
+   所以这里双保险：这条规则负责显示，JS 里同时给 .kv-card-body 挂 `hidden`，
+   两者都由 syncCard 一处驱动、不会打架，且 `hidden` 让测试能真正断到「藏起来了」。 */
+.kv-card--collapsed .kv-card-body { display: none; }
+
+.kv-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+.kv-card[data-status="complete"] .kv-dot { background: var(--ok); }
+.kv-card[data-status="partial"]  .kv-dot { background: var(--warn); }
+
+.kv-code {
+  flex: none;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  white-space: nowrap;
+}
+.kv-name {
+  min-width: 0;
+  font-size: .875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kv-name .badge { margin-left: 7px; }
+.kv-file {
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: .76rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kv-card-body { padding: 12px; }
+.kv-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.kv-card .field-label { display: flex; align-items: center; gap: 6px; }
+
+.kv-lang {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  font-size: .7rem;
+  font-weight: 650;
+  letter-spacing: .02em;
+}
+.kv-lang--jp { background: var(--danger-soft); color: var(--danger); }
+.kv-lang--zh { background: var(--ok-soft);     color: var(--ok); }
+
+/* 台词是给人读的自然语言，不要用等宽字体（.textarea 默认是等宽） */
+.kv-text {
+  min-height: 90px;
+  font-family: var(--font-sans);
+  font-size: .875rem;
+}
+
+.kv-card-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.kv-card-foot .btn { margin-left: auto; }
+
+.kv-add {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+}
+.kv-add-title { font-size: .82rem; color: var(--text-muted); }
+.kv-add .input {
+  width: auto;
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: .85rem;
+}
+
+.kv-foot-note { margin-left: auto; }
+
+@media (max-width: 640px) {
+  .kv-fields { grid-template-columns: minmax(0, 1fr); }
+  /* 档名由角色 ID 拼出来，可能很长：挤在一行会把场合名压成省略号。
+     窄屏把折叠按钮换成两行网格 —— 第一行「状态点 + 后缀 + 场合名 + 折叠箭头」，
+     第二行整行右对齐放档名。这样箭头不会被 flex 折行甩到第三行去。
+     省略开关仍留在第一行右侧（它也不能被折下去，否则收起状态看着像两行） */
+  .kv-card-toggle {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    row-gap: 4px;
+  }
+  .kv-card-toggle .kv-dot   { grid-area: 1 / 1; }
+  .kv-card-toggle .kv-code  { grid-area: 1 / 2; }
+  .kv-card-toggle .kv-name  { grid-area: 1 / 3; }
+  .kv-card-toggle .kv-caret { grid-area: 1 / 4; }
+  .kv-card-toggle .kv-file  { grid-area: 2 / 1 / 3 / 5; margin-left: 0; text-align: right; }
+  .kv-card-head { gap: 6px; }
+  .kv-omit { padding-left: 8px; }
 }

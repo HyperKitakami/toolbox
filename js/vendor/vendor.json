@@ -48,5 +48,19 @@
     "size": 63563,
     "usedBy": ["tools/password-generator/"],
     "modified": true
+  },
+  {
+    "name": "unihan-pinyin",
+    "version": "Unicode 18.0.0",
+    "file": "pinyin-common.js",
+    "license": "Unicode License v3.0",
+    "homepage": "https://www.unicode.org/reports/tr38/",
+    "source": "https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip → Unihan_Readings.txt 的 kMandarin 字段；只保留 GB2312 能编码的汉字（6763 个），去声调（ü → v），多音字取首个读音，按拼音分组输出「拼音 汉字们」的行（403 个音节）。脚本：.temporary/slug-generator/build-pinyin.py",
+    "sourceSha256": "4c93ea9c1f636451729a840978f1667a53886af37ba854fdcce109721c63d43e",
+    "sourceNote": "Unicode 官方不发布 Unihan.zip 的校验和文件（.sha256 / .md5 均 404）。此 sha256 由两个官方地址（UCD/latest 与 18.0.0）下载结果一致得出，完整性另由 ZIP 内建 CRC-32 校验（testzip() 全部通过）与文件头自描述确认。校验步骤见 THIRD-PARTY.md 第三节。",
+    "sha256": "6af7da0e920944eb528c8f9644927ed7ada8c6abd3e206337135909e09bbb53d",
+    "size": 23758,
+    "usedBy": ["tools/slug-generator/"],
+    "modified": true
   }
 ]

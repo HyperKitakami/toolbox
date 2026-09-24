@@ -537,6 +537,86 @@
 
 ---
 
+### 17. 文本大小写转换
+
+| | |
+|---|---|
+| 上游文件 | `text-case/index.html`、`js/tools/text-case.js` |
+| 本项目文件 | `tools/text-case/index.html`、`js/tools/text-case.js` |
+
+改动：
+
+- 界面文案全量中文化；上游的 `js/common.js`（`copyToClipboard`）未引入，
+  复制改用本项目的 `data-copy-target` 全局代理（整行可点）
+- 改用本项目的设计系统与组件类名（`.panel` / `.value-list` / `.value-row` / `.tool-notes`），
+  10 种风格按用途拆成「命名风格」（5 种，输出单个标识符）与
+  「整段文本大小写」（5 种，保留换行）两块
+
+#### 修复的缺陷
+
+判定依据是把上游的 `tokens` / `alternating` 与 `CASES` 里的纯函数抽出来跑边界用例，
+探针脚本见 `.temporary/text-case/probe-upstream.mjs`。下面每条都有可复现的输入。
+
+- **驼峰边界不认缩写词的尾巴（算法错误）。** 上游只做 `([a-z0-9])([A-Z])` 一遍替换，
+  也就是只在「小写或数字 → 大写」处切分；缩写词内部的大写连排后面接单词时切不开：
+
+  | 输入 | 上游结果 | 应为 |
+  |---|---|---|
+  | `getHTTPResponse` | `get_httpresponse` | `get_http_response` |
+  | `XMLHttpRequest` | `xmlhttp_request` | `xml_http_request` |
+  | `HTTPServer` | `httpserver` | `http_server` |
+  | `parseHTMLString` | `parse_htmlstring` | `parse_html_string` |
+
+  缩写混排是变量名里最常见的写法之一，转出来的标识符读不懂。本工具在它前面补一遍
+  `([A-Z]+)([A-Z][a-z])` 先切缩写词的尾巴，两遍下来 `getHTTPResponse` →
+  `get` + `http` + `response`。
+
+- **非拉丁字母被静默丢弃（静默失败）。** 上游的词元字符是 `[^A-Za-z0-9]` 取反，
+  其余一律当分隔符，于是 `café` → `caf`（重音字母没了）、
+  `用户姓名` → 空串、`привет мир` → 空串。
+  输入中文时十行结果全是空的，**界面上没有任何提示**。
+  本工具保留常见非拉丁字母（拉丁扩展 / 希腊 / 西里尔 / 希伯来 / 阿拉伯 / 假名 / CJK / 韩文）
+  作为词元的一部分：中文没有大小写，转出来还是原样，但不会被悄悄删掉。
+  同时刻意排除 `U+00D7`（×）与 `U+00F7`（÷）—— 它们夹在拉丁扩展的码位区间里但不是字母。
+
+- **Title Case 把撇号当成词边界。** 上游用 `/\b\w/g` 找词首，`'` 不是 `\w`，
+  于是 `don't stop` → `Don'T Stop`。本工具改成扫描式，
+  撇号（`'` 与 `’`）夹在字母之间时不算边界，得到 `Don't Stop`。
+
+- **Sentence case 只认 ASCII 的 `.!?`，且首字符是引号或括号时不大写。**
+  上游用 `(^\s*\w|[.!?]\s+\w)`：`^\s*\w` 要求首字符必须是 `\w`，
+  所以 `"hello world"` 的首字母不会被大写。本工具改成扫描式，补上中文的 `。！？`
+  与省略号 `…`，并区分中英标点 —— 英文的 `. ! ?` 要求后面有空白才算换句
+  （`hello!world` 不会被拆成两句），中文标点后面通常不加空格，直接生效。
+
+- **`aLtErNaTiNg` 的字母判断漏掉带重音的字母。** 上游用 `/[a-z]/i` 判断，
+  `é` 不匹配（JS 的 ignoreCase 不会把 `[a-z]` 扩到带重音的码位），
+  于是 `café` → `cAfé`（`é` 不参与交替计数）。
+  本工具改成「有大小写概念的字符」才计数 —— `é` 算（`É`），中文不算，
+  这样一段中文插在中间也不会把交替的节奏打乱。
+
+- **空输入时给出十行空白结果。** 上游没有空状态，输入框为空时右侧是十行空行。
+  本工具给出空状态提示；文本里只剩标点、切不出词元时，
+  命名风格区单独提示「这段文本里没有可以组成标识符的字符」。
+
+#### 不算缺陷，但口径要写清楚
+
+- **下划线算不算词边界。** 上游用 `\b\w` 找词首，而 `_` 属于 `\w`，
+  所以 `snake_case here` → `Snake_case Here`。本工具把 `_` 当分隔符
+  （与 `hello-world` → `Hello-World` 的处理保持一致），得到 `Snake_Case Here`。
+  两种写法都说得通，这是口径选择，不是缺陷。
+- **Title Case 会先整体小写。** 所以 `HTTP` → `Http`、`iPhone` → `Iphone`。
+  这是 Title Case 的通行做法（每个词首字母大写、其余小写），
+  本工具在说明区写明「专有名词需要手动调回来」。
+
+#### 新增
+
+- 点任意一行即复制（上游是每行配一个 Copy 按钮）
+- 状态行显示切出了几个词元；输入是多行时提示「已把 N 行合并成一个标识符」
+- 整段大小写那组保留换行与段落结构
+
+---
+
 > 上游另有一套 `js/umd-guard.js` / `js/umd-unguard.js`，在加载内置库时临时屏蔽
 > `define` / `module` / `exports` 全局变量，防止 UMD 加载被劫持。本项目有严格 CSP
 > 且不加载任何内联脚本，未引入这套防护。
@@ -646,6 +726,39 @@
 
 ---
 
+### Unihan 拼音数据
+
+| | |
+|---|---|
+| 版本 | Unicode 18.0.0（`Unihan_Readings.txt` 头部标注：Date 2026-07-31、Unicode Version 18.0.0） |
+| 用途 | 中文转拼音（Slug 生成工具） |
+| 许可 | **Unicode License v3.0** |
+| 版权 | © 2026 Unicode®, Inc. |
+| 来源 | https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip<br>字段说明：https://www.unicode.org/reports/tr38/ |
+| 文件 | `js/vendor/pinyin-common.js` |
+| 原始文件 sha256 | `4c93ea9c1f636451729a840978f1667a53886af37ba854fdcce109721c63d43e` |
+| 本项目文件 sha256 | `6af7da0e920944eb528c8f9644927ed7ada8c6abd3e206337135909e09bbb53d` |
+
+**这是一份加工过的文件，不是原样复制。** 加工脚本：`.temporary/slug-generator/build-pinyin.py`。
+五步：
+
+1. 只取 `Unihan_Readings.txt` 里的 `kMandarin` 行，该文件的其他字段一概不用
+2. 只保留 GB2312 能编码的汉字 —— 这是「常用汉字」的现成判据，不必自己维护字表。
+   Unihan 的 kMandarin 收 44355 个码位，GB2312 范围内命中 **6763 个**（复算过：一个都没缺）
+3. 去声调：`ā á ǎ à` → `a`、`ǖ ǘ ǚ ǜ` 与 `ü` → `v`（slug 惯例：绿 → `lv`）
+4. 多音字取 kMandarin 的第一个读音（Unihan 按常用度排序）
+5. 按拼音分组输出「拼音 汉字们」的行，共 **403 个音节**，拼音只写一次
+
+结果 23758 字节。逐字写「字:拼音」的话约 60 KB，分组写法省了一半以上。
+
+**许可说明**：Unicode 数据文件采用 [Unicode License v3.0](https://www.unicode.org/license.txt)，
+允许使用、复制、修改与分发，要求保留版权声明。本项目在生成的文件头保留了来源与许可说明。
+
+**Unicode 官方不发布 `Unihan.zip` 的校验和文件**（`Unihan.zip.sha256` 与 `.md5` 都返回 404），
+所以完整性改用三条独立证据确认，见下面「三」。
+
+---
+
 ## 三、如何校验内置资源
 
 三个库都是从 npm 官方包直接提取的，词表来自 EFF 官网，`js/vendor/vendor.json` 里
@@ -703,6 +816,73 @@ console.log('官方', off.length, '内置', mine.length,
 #   应为：官方 7776 内置 7776 逐词一致: true
 
 node --check js/vendor/eff-large-wordlist.js
+```
+
+### Unihan 拼音数据（官方不提供校验和）
+
+Unicode 官方**没有**发布 `Unihan.zip` 的校验和文件（`.sha256` / `.md5` 都是 404），
+所以「对比官方校验和」这一条在这里走不通。改用三条互相独立的证据：
+
+```bash
+# ① 固定版本目录（内容不随 latest 漂移），与 latest 下载结果对比
+curl -sL https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip -o Unihan-18.0.0.zip
+curl -sL https://www.unicode.org/Public/UCD/latest/ucd/Unihan.zip -o Unihan.zip
+sha256sum Unihan.zip Unihan-18.0.0.zip
+#   两者应完全相同：
+#   4c93ea9c1f636451729a840978f1667a53886af37ba854fdcce109721c63d43e
+
+# ② ZIP 每个条目自带 CRC-32，解压时逐条校验 —— 这一步能真正排除「截断 / 损坏」
+python -c "
+import zipfile
+with zipfile.ZipFile('Unihan.zip') as z:
+    print('CRC 校验:', '全部通过' if z.testzip() is None else z.testzip())
+"
+
+# ③ 头部自描述与规模自检：版本号、日期、字段清单都在文件头里
+python -c "
+import zipfile
+with zipfile.ZipFile('Unihan.zip') as z:
+    head = z.read('Unihan_Readings.txt').decode('utf-8').splitlines()[:8]
+print('\n'.join(head))
+"
+#   应为 Unicode Version 18.0.0 / Date 2026-07-31
+```
+
+> 第 ① 条只能证明「两个官方地址给出同一个文件」，证明不了文件本身完整 ——
+> 真正起作用的是第 ② 条的 ZIP 内建 CRC-32：它能发现任何字节级损坏或截断，
+> 比「再下一次比哈希」有力得多。
+
+重新生成内置表（需要 Python 3，脚本在 `.temporary/slug-generator/`）：
+
+```bash
+python build-pinyin.py Unihan.zip ../../js/vendor/pinyin-common.js
+# 输出会列出：Unihan 收录 44355 个码位 / GB2312 范围内 6763 个字 /
+#            GB2312 里没有拼音的汉字 0 个 / 拼音音节 403 个，
+#            并抽样核对 我 wo、你 ni、好 hao、中 zhong、绿 lv、女 nv 等
+node --check js/vendor/pinyin-common.js
+```
+
+解析结果的抽样核对（在 Node 里把内置表还原成映射表再查）：
+
+```bash
+node -e "
+const fs = require('fs');
+const win = {};
+new Function('window', fs.readFileSync('js/vendor/pinyin-common.js','utf8'))(win);
+const map = Object.create(null);
+win.TOOLBOX_PINYIN.data.split('\n').forEach((line) => {
+  const i = line.indexOf(' '); if (i < 0) return;
+  const py = line.slice(0, i);
+  for (const ch of line.slice(i + 1)) map[ch] = py;
+});
+const want = { 我:'wo', 你:'ni', 好:'hao', 中:'zhong', 国:'guo', 绿:'lv', 女:'nv' };
+let bad = 0;
+for (const ch of Object.keys(want)) {
+  if (map[ch] !== want[ch]) { console.log('不符:', ch, map[ch], '应为', want[ch]); bad++; }
+}
+console.log('条目数', Object.keys(map).length, '不符', bad);
+"
+#   应为：条目数 6763 不符 0
 ```
 
 > 提示：直接从 CDN / raw 链接下载大文件时容易被截断。**不要**用

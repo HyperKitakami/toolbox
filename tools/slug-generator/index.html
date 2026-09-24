@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slug 生成 · 工具箱</title>
+<meta name="description" content="把标题转成干净的 URL 标识：中文自动转拼音、去标点、统一分隔符与大小写，支持逐行批量与最大长度限制。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css?v=058d76e5">
+<link rel="stylesheet" href="../../css/site.css?v=9cec08cc">
+<link rel="stylesheet" href="../../css/tool.css?v=97ca4ac3">
+<script src="../../js/theme-init.js?v=f8313ac9"></script>
+</head>
+<body data-tool="slug-generator" data-hub="text">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/text/">文本</a>
+      <span class="sep">/</span>
+      <span aria-current="page">Slug 生成</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>Slug 生成</h1>
+        <p class="lead">
+          把标题转成干净的 URL 标识：中文自动转拼音、标点与符号去掉、空格换成统一的分隔符。
+          一行一个标题，逐行输出；也可以限制最长字符数，在词边界处截断。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">实时更新</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="tool-body">
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">标题 / 文本</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-demo>填入示例</button>
+              <button class="btn btn--sm" type="button" data-clear>清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <textarea class="textarea" id="sg-input" rows="12" spellcheck="false"
+                      placeholder="一行一个标题，右侧会逐行生成 slug…"></textarea>
+          </div>
+          <div class="panel-foot">
+            <span>输入内容不会离开浏览器</span>
+            <span id="sg-status"></span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Slug</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-copy-target="#sg-output">复制</button>
+              <button class="btn btn--sm" type="button" id="sg-download">下载</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <pre class="output" id="sg-output" data-placeholder="生成结果会显示在这里"></pre>
+          </div>
+          <div class="panel-foot">
+            <span id="sg-out-foot">空行会被跳过，只输出有内容的行</span>
+          </div>
+        </section>
+
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">生成选项</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm" type="button" id="sg-reset">恢复默认</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="opt-grid">
+
+            <div class="opt-row">
+              <span class="opt-label">中文</span>
+              <div class="choice-row">
+                <button class="choice-chip" type="button" data-opt="chinese" data-value="pinyin" aria-pressed="true">转拼音</button>
+                <button class="choice-chip" type="button" data-opt="chinese" data-value="drop" aria-pressed="false">删除</button>
+                <button class="choice-chip" type="button" data-opt="chinese" data-value="keep" aria-pressed="false">保留</button>
+              </div>
+            </div>
+
+            <div class="opt-row">
+              <span class="opt-label">拼音</span>
+              <div class="choice-row">
+                <button class="choice-chip" type="button" data-opt="pinyinStyle" data-value="full" aria-pressed="true">全拼</button>
+                <button class="choice-chip" type="button" data-opt="pinyinStyle" data-value="initial" aria-pressed="false">首字母</button>
+                <span class="opt-note">仅「中文 = 转拼音」时有效</span>
+              </div>
+            </div>
+
+            <div class="opt-row">
+              <span class="opt-label">分隔符</span>
+              <div class="choice-row">
+                <button class="choice-chip" type="button" data-opt="sep" data-value="-" aria-pressed="true">短横线 -</button>
+                <button class="choice-chip" type="button" data-opt="sep" data-value="_" aria-pressed="false">下划线 _</button>
+                <button class="choice-chip" type="button" data-opt="sep" data-value="" aria-pressed="false">无</button>
+              </div>
+            </div>
+
+            <div class="opt-row">
+              <span class="opt-label">大小写</span>
+              <div class="choice-row">
+                <button class="choice-chip" type="button" data-opt="letterCase" data-value="lower" aria-pressed="true">小写</button>
+                <button class="choice-chip" type="button" data-opt="letterCase" data-value="keep" aria-pressed="false">原样</button>
+                <button class="choice-chip" type="button" data-opt="letterCase" data-value="upper" aria-pressed="false">大写</button>
+              </div>
+            </div>
+
+            <div class="opt-row">
+              <span class="opt-label">最大长度</span>
+              <div class="choice-row">
+                <input class="input input--num" type="text" id="sg-maxlen" value="0"
+                       inputmode="numeric" aria-label="最大长度，0 表示不限">
+                <span class="opt-note">字符数，0 = 不限；超出时在最后一个分隔符处截断</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="panel-foot">
+          <span>重音符号会自动去除（<code class="mono">café</code> → <code class="mono">cafe</code>）；
+            除字母、数字与分隔符以外的字符一律丢弃</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">转换概览</span>
+        </div>
+        <div class="panel-body">
+          <div class="stat-grid" id="sg-stats"></div>
+        </div>
+        <div class="panel-foot">
+          <span id="sg-foot">拼音表覆盖 6763 个常用汉字（GB2312 全部汉字）</span>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>转换规则</h3>
+        <ul>
+          <li><strong>先切词再拼接</strong>：字母与数字连成一段算一个词，其余字符（空格、标点、符号）都当分隔符。
+            连续分隔符只算一个，首尾的分隔符会被去掉。</li>
+          <li><strong>中文转拼音</strong>：全拼模式下每个汉字是一个词
+            （<code class="mono">你好世界</code> → <code class="mono">ni-hao-shi-jie</code>）；
+            首字母模式下连续的中文合并成一个词
+            （<code class="mono">你好世界</code> → <code class="mono">nhsj</code>）。</li>
+          <li><strong>重音符号自动去除</strong>：<code class="mono">Café</code> →
+            <code class="mono">cafe</code>、<code class="mono">München</code> →
+            <code class="mono">munchen</code>，用的是 Unicode 分解 + 去组合标记。</li>
+          <li><strong>拼音不带声调</strong>：带调符号（<code class="mono">nǐ</code>）在 URL 里会被
+            百分号编码成一串 <code class="mono">%C7%90</code>，所以这里统一用无声调形式。
+            <code class="mono">lü</code> 按 slug 惯例写成 <code class="mono">lv</code>
+            （「绿色」→ <code class="mono">lv-se</code>），避免与「路」的 <code class="mono">lu</code> 混淆。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>拼音表与多音字</h3>
+        <ul>
+          <li>拼音表来自 <strong>Unicode Unihan 数据库</strong>的 <code class="mono">kMandarin</code> 字段，
+            收录 GB2312 范围内的 <strong>6763 个汉字</strong>（403 个音节），覆盖日常使用的绝大部分汉字。</li>
+          <li><strong>多音字取 Unihan 给出的第一个读音</strong>：<code class="mono">长</code> 会转成
+            <code class="mono">zhang</code>，如果你要的是 <code class="mono">chang</code>，
+            直接把输入里的那个字改成拼音写出来即可。</li>
+          <li>不在表里的汉字按分隔符处理，底部会提示有几个字没查到拼音。
+            <code class="mono">〇</code> 是个特例：Unicode 把它放在「CJK 符号和标点」区块里，
+            Unihan 也没给它拼音，所以它同样不在表内；扩展 B 区之后的字（如
+            <code class="mono">𠮷</code>）也一样。</li>
+        </ul>
+      </div>
+
+      <div class="tool-note">
+        <h3>常见用途</h3>
+        <ul>
+          <li>给中文文章标题生成 URL：<code class="mono">如何用 Python 写爬虫</code> →
+            <code class="mono">ru-he-yong-python-xie-pa-chong</code>。</li>
+          <li>批量处理一列标题，一次拿到整份 slug 列表（一行一个）。</li>
+          <li>给图片、视频文件重命名，避免中文文件名在跨平台传输时乱码。</li>
+          <li>限制长度的场景（如数据库字段 50 字符）可以在词边界处自动截断。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。所有工具都在浏览器本地运行，
+          不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js?v=ac991201" defer></script>
+<script src="../../js/site.js?v=78db1b55" defer></script>
+<script src="../../js/vendor/pinyin-common.js?v=6af7da0e" defer></script>
+<script src="../../js/tools/slug-generator.js?v=7049b9ce" defer></script>
+</body>
+</html>

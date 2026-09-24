@@ -48,6 +48,7 @@ tools-box/
 │   │   ├── marked.umd.js      Markdown 解析
 │   │   ├── purify.min.js      HTML 净化
 │   │   ├── eff-large-wordlist.js  EFF 长词表（口令短语用，7776 词）
+│   │   ├── pinyin-common.js   Unihan 拼音表（中文转拼音用，6763 个常用汉字）
 │   │   └── vendor.json        版本、来源与 sha256 记录
 │   └── tools/
 │       ├── _template.js       工具逻辑模板
@@ -59,6 +60,9 @@ tools-box/
 │       ├── timestamp-converter.js 移植
 │       ├── number-formatter.js 自研
 │       ├── base-converter.js  自研
+│       ├── whitespace-cleaner.js 自研
+│       ├── text-case.js       移植
+│       ├── slug-generator.js  自研
 │       ├── password-generator.js 移植
 │       ├── lorem-ipsum.js     移植
 │       ├── uuid-generator.js  移植
@@ -66,7 +70,8 @@ tools-box/
 │       ├── json-formatter.js  移植
 │       ├── markdown-to-html.js 移植
 │       ├── csv-viewer.js     移植
-│       └── markdown-preview.js 移植
+│       ├── markdown-preview.js 移植
+│       └── kcwiki-voiceline.js KCWiki 语音台词（自研）
 ├── hubs/<id>/index.html       六个分类页（由脚本生成，不要手改）
 ├── tools/
 │   ├── _template/index.html   工具页模板：复制这个目录开新工具
@@ -88,7 +93,7 @@ tools-box/
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
-| 文本 | 字数统计 | 6 | 0 |
+| 文本 | 字数统计、空白清理、文本大小写转换、Slug 生成、KCWiki 语音台词 | 3 | 0 |
 
 完整清单见 `js/registry.js`。三种状态在站点上的表现：
 
@@ -123,6 +128,7 @@ tools-box/
 | 占位文本生成 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `lorem-ipsum` + Cicero 原文 | MIT / 公有领域 |
 | UUID 生成器 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `uuid-generator` | MIT |
 | 时间戳转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `timestamp-converter` | MIT |
+| 文本大小写转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `text-case` | MIT |
 | 文本差异对比 | 自研 | — |
 | 字数统计 | 自研 | — |
 | 随机字符串 | 自研 | — |
@@ -130,6 +136,9 @@ tools-box/
 | 单位换算 | 自研 | — |
 | 数字格式化 | 自研 | — |
 | 进制转换 | 自研 | — |
+| 空白清理 | 自研 | — |
+| Slug 生成 | 自研 + [Unihan 拼音数据](https://www.unicode.org/reports/tr38/) | — / Unicode License v3.0 |
+| KCWiki 语音台词 | 自研（由本机旧版个人工具整理迁移） | — |
 
 ## 内置的第三方资源
 
@@ -141,9 +150,10 @@ tools-box/
 | [DOMPurify](https://github.com/cure53/DOMPurify) | 3.4.15 | HTML 净化 | Apache-2.0 OR MPL-2.0 |
 | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | 2.0.4 | 二维码编码 | MIT |
 | [EFF 长词表](https://www.eff.org/dice) | 2016-07-18 | 口令短语的单词来源（7776 词） | CC BY 3.0 US |
+| [Unihan 拼音数据](https://www.unicode.org/reports/tr38/) | Unicode 18.0.0 | 中文转拼音（GB2312 范围内 6763 个汉字） | Unicode License v3.0 |
 
-> 注意 DOMPurify **不是 MIT**，EFF 词表要求**署名**。
-> 再分发本项目时需同时遵守这两者的许可条款。
+> 注意 DOMPurify **不是 MIT**，EFF 词表要求**署名**，Unihan 拼音数据要求
+> **保留版权声明**（© Unicode, Inc.）。再分发本项目时需同时遵守这三者的许可条款。
 
 完整的来源、改动清单与校验方法见 **[THIRD-PARTY.md](THIRD-PARTY.md)**。
 
@@ -228,7 +238,7 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 [Iris Digital](https://irisdigital.tech/) 构建并维护的隐私优先工具集，
 同样以 MIT 许可开源。本项目的整体形态（纯静态、零依赖、100% 客户端运行、
 一个工具一个目录加一个脚本）直接参考了它的做法，
-目前有十六个工具是基于它移植而来：
+目前有十七个工具是基于它移植而来：
 
 - **正则表达式测试** ← `regex-tester`：沿用其模式解释算法、界面结构与交互流程
 - **JSON 格式化** ← `json-formatter`：沿用其格式化 / 压缩 / 校验的功能划分与粘贴即格式化
