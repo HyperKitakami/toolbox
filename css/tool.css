@@ -939,7 +939,8 @@ kbd.hint-key {
 /* 用在哪：.code-empty（代码视图）、.table-empty（表格）、.outline-empty（大纲）、
    .match-empty（匹配列表）、.regex-explainer-empty（模式解释）、.md-empty（预览）、
    .kv-empty（KCWiki 语音台词：筛选后一条都不剩）、
-   .wv-result-empty（日语语音校对：还没开始分析） */
+   .wv-result-empty（日语语音校对：还没开始分析）、
+   .ps-empty（密码强度检测：还没输入 / 没有命中模式） */
 .code-empty,
 .table-empty,
 .outline-empty,
@@ -947,7 +948,8 @@ kbd.hint-key {
 .regex-explainer-empty,
 .md-empty,
 .kv-empty,
-.wv-result-empty {
+.wv-result-empty,
+.ps-empty {
   padding: 30px 14px;
   text-align: center;
   font-size: .88rem;
@@ -958,7 +960,8 @@ kbd.hint-key {
 .table-empty strong,
 .md-empty strong,
 .kv-empty strong,
-.wv-result-empty strong {
+.wv-result-empty strong,
+.ps-empty strong {
   display: block;
   margin-bottom: 5px;
   color: var(--text);
@@ -1592,7 +1595,10 @@ kbd.hint-key {
   background: var(--ok-soft);
 }
 
-/* --- 28. 密码生成器（强度条） ------------------------------------------- */
+/* --- 28. 强度条（密码生成器 / 密码强度检测共用） ------------------------ */
+/* 类名 `.pg-strength` 是密码生成器时期起的（pg = password generator），
+   现在密码强度检测也用它。改名要同时动两个工具的页面、脚本与测试，
+   收益不抵风险，所以留着并在这里说明：**这是一个跨工具的共用组件**。 */
 .pg-strength {
   display: flex;
   align-items: center;
@@ -2713,4 +2719,87 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
 @media (max-width: 560px) {
   .b64-filecard { flex-direction: column; }
   .b64-preview { width: 100%; height: 140px; }
+}
+
+/* --- 41. 密码强度检测（输入行、拆解表、发现清单） ------------------------ */
+
+/* 输入行：密码框 + 显示按钮 */
+.ps-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ps-field .input { flex: 1 1 auto; min-width: 0; }
+
+/* 结论那行跟着等级上色。用相邻兄弟选择器，不碰第 28 节那条「点亮色块」的规则 ——
+   把色块和文字写成同一条声明，后补的低权重规则压不回来（那条注释里记着这事）。 */
+.ps-verdict {
+  margin: 10px 0 0;
+  font-size: .85rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.pg-strength[data-level="1"] + .ps-verdict { color: var(--danger); }
+.pg-strength[data-level="2"] + .ps-verdict { color: var(--warn); }
+
+/* 字符构成那行。空着的时候也要占位，否则面板高度会跳一下 */
+.ps-classes {
+  margin: 8px 0 0;
+  min-height: 1.25em;
+  font-size: .8rem;
+  color: var(--text-faint);
+}
+
+/* 破解场景表：场景名比通用 .value-row 的 58px 标签列长得多
+   （「离线 · 快哈希 · 集群」），加宽标签列，时间列用等宽数字对齐 */
+.ps-attacks .value-row { grid-template-columns: 150px minmax(0, 1fr); }
+.ps-attacks .value-text { font-variant-numeric: tabular-nums; }
+
+/* 拆解表：「说明」列是整句话，不能沿用 .data-table 的 nowrap + 省略号 */
+.ps-patterns .data-table td { white-space: normal; }
+.ps-patterns .data-table td:first-child {
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+.ps-patterns .ps-cost {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 发现清单：左边一道色条表示严重程度，和 .notice--warn 是同一套语言 */
+.ps-findings { display: grid; gap: 10px; }
+
+.ps-finding {
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.ps-finding-title {
+  margin: 0;
+  font-size: .87rem;
+  font-weight: 650;
+  color: var(--text);
+}
+.ps-finding-text {
+  margin: 4px 0 0;
+  font-size: .82rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+.ps-finding[data-level="danger"] { border-left-color: var(--danger); }
+.ps-finding[data-level="danger"] .ps-finding-title { color: var(--danger); }
+.ps-finding[data-level="warn"] { border-left-color: var(--warn); }
+.ps-finding[data-level="warn"] .ps-finding-title { color: var(--warn); }
+.ps-finding[data-level="info"] { border-left-color: var(--border-strong); }
+.ps-finding[data-level="ok"] { border-left-color: var(--ok); }
+.ps-finding[data-level="ok"] .ps-finding-title { color: var(--ok); }
+
+@media (max-width: 560px) {
+  .ps-field { flex-wrap: wrap; }
+  .ps-field .input { flex: 1 1 100%; }
+  .ps-attacks .value-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }

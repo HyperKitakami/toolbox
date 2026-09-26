@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>密码强度检测 · 工具箱</title>
+<meta name="description" content="输入一个密码，算出攻击者最省的一条路要试多少次：朴素字符集上界与模式化估计并列给出，识破词表词、l33t 替换、键盘序列、重复与日期，并按五种破解场景换算时间。全程在浏览器本地完成，不保存、不联网。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css?v=dee542d6">
+<link rel="stylesheet" href="../../css/site.css?v=da4b5ba1">
+<link rel="stylesheet" href="../../css/tool.css?v=397a2e25">
+<script src="../../js/theme-init.js?v=f8313ac9"></script>
+</head>
+<body data-tool="password-strength" data-hub="security">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../hubs/ai/">AI 辅助</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/security/">安全</a>
+      <span class="sep">/</span>
+      <span aria-current="page">密码强度检测</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>密码强度检测</h1>
+        <p class="lead">
+          这个工具不数「有没有大写和符号」，而是把密码拆成
+          <strong>攻击者会怎么猜</strong>的几段，算出最省的那条路要试多少次：
+          词表词、l33t 替换（<code class="mono">P@ssw0rd</code>）、键盘相邻键、重复、日期，
+          逐段计价后取总和最少的一种拆法。所以
+          <code class="mono">P@ssw0rd</code> 在这里只有个位数比特，而
+          「每个字符都独立随机」那种算法会把它算成 52 比特。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge badge--warn">不保存 · 不上传</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="notice notice--warn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2 19 6v6.1c0 4.4-2.9 7.4-7 8.7-4.1-1.3-7-4.3-7-8.7V6l7-2.8Z"/><path d="M12 9v4M12 16h.01"/></svg>
+        <p>
+          <strong>这个密码不会被发到任何地方。</strong>它只在本机内存里被算一遍：
+          不发网络请求、不写 <code class="mono">localStorage</code>、不进 URL 参数、
+          刷新即消失 —— 这个页面<strong>没有</strong>草稿功能，是有意不做的。
+          不过把真实密码打进任何一个输入框之前都值得想一下：先确认这台机器是你自己的，
+          算完点一下「清空」。
+        </p>
+      </div>
+
+      <div class="tool-body">
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">密码</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="ps-reveal"
+                      aria-controls="ps-input" title="显示或隐藏密码原文">显示</button>
+              <button class="btn btn--sm" type="button" data-demo>填入示例</button>
+              <button class="btn btn--sm" type="button" data-clear>清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="ps-field">
+              <input class="input" id="ps-input" type="password" spellcheck="false"
+                     autocomplete="off" autocapitalize="off" autocorrect="off"
+                     aria-label="要检测的密码"
+                     placeholder="在这里输入或粘贴一个密码…">
+            </div>
+
+            <div class="pg-strength" id="ps-strength" data-level="0">
+              <span class="pg-strength-bar" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+              <span class="pg-strength-label" id="ps-level"></span>
+            </div>
+            <p class="ps-verdict" id="ps-verdict"></p>
+
+            <p class="ps-classes" id="ps-classes"></p>
+          </div>
+          <div class="panel-foot">
+            <span class="tool-status" id="ps-status"></span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">破解要多久</span>
+          </div>
+          <div class="panel-body">
+            <div class="value-list ps-attacks" id="ps-attacks"></div>
+          </div>
+          <div class="panel-foot">
+            <span>都是<strong>量级</strong>假设，不是实测值</span>
+          </div>
+        </section>
+
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">两种算法摆在一起</span>
+        </div>
+        <div class="panel-body">
+          <div class="stat-grid" id="ps-stats"></div>
+        </div>
+        <div class="panel-foot">
+          <span>
+            「朴素上界」= 长度 × log₂(字符集)：假设每个字符都独立随机，是理论上的最大值。
+            「有效熵」= 按下面拆出来的模式逐段计价，取最省的拆法 —— 这才是攻击者实际要花的力气。
+            两个数差得越远，说明这个密码越像「有规律的组合」而不是随机串。
+          </span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">检测到的模式</span>
+          <div class="panel-actions">
+            <span class="opt-note" id="ps-seg-count"></span>
+          </div>
+        </div>
+        <div class="table-scroll table-scroll--boxed ps-patterns" id="ps-patterns"></div>
+        <div class="panel-foot">
+          <span>攻击者会挑最省的那种拆法 —— 表里就是它挑的那一种，「代价」是猜中这一段要试的次数（log₂）</span>
+          <span>片段默认是遮着的，点右上角「显示」看原文</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">发现与建议</span>
+        </div>
+        <div class="panel-body">
+          <div class="ps-findings" id="ps-findings"></div>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>两个数字为什么要并排给</h3>
+        <ul>
+          <li><strong>朴素上界</strong> = 长度 × log₂(字符集)。它回答「如果每个字符都独立随机，
+            总共有多少种可能」，是一个<strong>上界</strong>。绝大多数强度条只算这个，
+            于是 <code class="mono">P@ssw0rd</code> 会得到 52 比特、被标成「强」。</li>
+          <li><strong>有效熵</strong> = 把密码拆成一段段「能被猜出来的模式」，
+            每段给一个「猜中它要试多少次」，用动态规划求<strong>总代价最小的那种拆法</strong> ——
+            攻击者就是这么拆的。<code class="mono">P@ssw0rd</code> 会命中
+            「<code class="mono">password</code> 这个词 + 两处 l33t 替换」，只剩 4 比特。</li>
+          <li>单字符段的代价按整个密码的字符集算，所以「每个字符各拆一段」这个平凡拆法
+            恰好等于朴素上界 —— 于是<strong>有效熵永远 ≤ 朴素上界</strong>，
+            两个数可以直接比。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>每段的代价是怎么定的</h3>
+        <ul>
+          <li><strong>单字符</strong>：log₂(字符集大小)。</li>
+          <li><strong>查表命中</strong>：攻击者先试「最常见密码表」、再试「常用词表」、
+            最后才轮到 7776 词的通用英文词表。所以代价 = log₂(排到自己为止试了多少个 + 1)，
+            表里第一个口令只要 1 次猜测（≈ 0 比特）。命中之后还要加：
+            大小写变体（首字母大写 / 全大写各 +1 比特，混合大小写 +长度）、
+            <strong>l33t 替换</strong>（每处 +1 比特起）、反转（+1 比特）。</li>
+          <li><strong>键盘 / 序列</strong>：log₂(表数 × 起点数 × 方向) + log₂(长度)。
+            认字母表、数字、四行键盘键位，正反都算。</li>
+          <li><strong>重复</strong>：log₂(基串代价) + log₂(重复次数)。</li>
+          <li><strong>日期</strong>：log₂(年数 × 12 × 31 × 排列数)，只认 1900–2099 里的年月日
+            与 4 位年份。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>字符集档位（自己算要用到的表）</h3>
+        <ul>
+          <li>数字 10 · 小写字母 26 · 大写字母 26 · ASCII 符号 33</li>
+          <li>中日韩文字按 2000 计（常用汉字量级）；其它非 ASCII 按 100 计。
+            拼音之外的拉丁扩展字母实际远小于 2000，所以那一类会被<strong>低估</strong> ——
+            方向是安全的（宁可说弱，别把弱密码说成强）。</li>
+          <li>字符集是「各类之和」：例如同时用了数字、大小写与符号，字符集就是
+            10 + 26 + 26 + 33 = 95。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>五个破解场景的量级假设</h3>
+        <ul>
+          <li>表里从<strong>最弱的攻击者</strong>排到<strong>最强的</strong>（每秒尝试次数单调递增），
+            所以时间会一路变短 —— 上下一比就能看出：同一个密码，换个攻击方式差好几个数量级。</li>
+          <li><strong>在线 · 每小时 100 次</strong>：有锁定或验证码。
+            这才是最接近真实攻击的一档 —— 一个没泄露的密码，攻击者只能在线猜。</li>
+          <li><strong>在线 · 不限速</strong> 10 次/秒：登录接口既不锁定也不加验证码。</li>
+          <li><strong>离线 · 慢哈希</strong> 10<sup>5</sup> 次/秒：目标站点用 bcrypt / Argon2
+            这类慢哈希，单张 GPU 的量级。</li>
+          <li><strong>离线 · 快哈希</strong> 10<sup>11</sup> 次/秒：站点用的是 MD5 / SHA-1 /
+            SHA-256 这类为速度设计的哈希，单张 GPU 的量级，也是
+            <a href="../password-generator/">密码生成器</a>里「离线爆破」用的同一个数。</li>
+          <li><strong>离线 · 快哈希 · 集群</strong> 10<sup>13</sup> 次/秒：同一套算法，100 张 GPU。</li>
+          <li>都取<strong>平均命中位置</strong>（试到一半就中），所以时间是
+            2<sup>熵值</sup> ÷ (2 × 每秒次数)。这些数字是量级，不是实测值 ——
+            真正决定要多久的是目标站点用的哈希，以及它有没有加盐、限速。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>这个分数会偏高的四种情况</h3>
+        <ul>
+          <li><strong>词表够不到的东西</strong>：拼写变体、专有名词、其它语言、拼音姓名
+            （<code class="mono">zhangsan1990</code> 里的 <code class="mono">zhangsan</code>）
+            都不在表里，只能按逐字符暴力算，会明显偏高。词表是英文的。</li>
+          <li><strong>中文 / 日文没有词表，也不分词</strong>：几个汉字组成的词或短语会被当成
+            「每个字都从 2000 个常用字里随机挑的」。检测到纯中日韩文字时，
+            结果里会专门挂一条提示。</li>
+          <li><strong>多词口令</strong>（<code class="mono">correcthorsebatterystaple</code>）
+            按「每个词都是从列表里随机抽的」计价，而人选的词不是随机的。</li>
+          <li><strong>人选的「随机」串</strong>：把键盘来回敲一遍看着很乱，
+            但只要它出现在某个泄露口令库里，实际强度就是 0。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>为什么不做批量检测</h3>
+        <ul>
+          <li>强度检测的用处在于<strong>解释</strong>：告诉你哪一段被识破了、为什么弱、怎么改。
+            排成一张只有数字的表格，这几件事就全没了 —— 只能得到一个分数，
+            而分数正是最容易被误读的东西。</li>
+          <li>要比较多组候选，逐个粘进来就行（页面不会保存，也不接受文件）。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>和「密码生成器」的分工</h3>
+        <ul>
+          <li>生成器负责<strong>造</strong>密码，这里负责<strong>量</strong>别人给的密码。
+            两边的强度分档（40 / 60 / 80 比特 → 弱 / 一般 / 强 / 很强）与爆破时间换算
+            是<strong>同一份实现</strong>（<code class="mono">js/password-utils.js</code>），
+            所以同一个密码在两个页面里看到的评级一定一样。</li>
+          <li>觉得自己该换密码了，去生成器挑一个；想让记住的密码更结实，
+            那边还有「口令短语」模式。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>最后一句实话</h3>
+        <ul>
+          <li>这个分数回答的是「按上面那套模型猜，最省的一条路要多少次」。
+            它<strong>不</strong>回答「这个密码安不安全」。</li>
+          <li>撞库（拿别处泄露的口令直接试）、钓鱼、一个密码到处复用 ——
+            哪一样都比算力便宜。分数再高也挡不住这三件事。</li>
+          <li>真想让账号稳一点，收益最大的两件事是：<strong>加长</strong>，
+            以及<strong>每个站点用不一样的密码</strong>（用密码管理器存）。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。除「AI 辅助」分类会调用外部模型外，
+          其余工具都在浏览器本地运行，不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+          <li><a href="../../hubs/ai/">AI 辅助</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js?v=0aa75147" defer></script>
+<script src="../../js/password-utils.js?v=2e77cb16" defer></script>
+<script src="../../js/site.js?v=a02794fe" defer></script>
+<script src="../../js/vendor/eff-large-wordlist.js?v=8e5b244d" defer></script>
+<script src="../../js/tools/password-strength.js?v=036d66e2" defer></script>
+</body>
+</html>

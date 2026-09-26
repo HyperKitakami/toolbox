@@ -18,7 +18,8 @@
    6. **批量条数被静默截断**：上游 `Math.min(..., 100)`，界面上没有任何提示，
       填 500 只给 100。现在输入框直接限定 1–100，超界标红回退。
    7. **爆破时间会溢出**：上游 `Math.pow(2, entropy)` 在熵值很大时变成 Infinity，
-      于是所有分档都落进最后一档。现在全程在对数空间计算。
+      于是所有分档都落进最后一档。现在全程在对数空间计算
+      （换算表与强度分档后来抽到 js/password-utils.js，与密码强度检测共用一份）。
    8. **词表只覆盖 A–F**：上游自带的 529 个词排到 faculty 就断了，换成 EFF 官方
       7776 词长词表（js/vendor/eff-large-wordlist.js）。
    9. 新增「每类至少出现一次」—— 上游没有，但很多站点强制要求大小写 + 数字。
@@ -67,6 +68,15 @@
     return;
   }
 
+  /* 爆破时间与强度分档在 js/password-utils.js 里 —— 密码强度检测那个工具要用
+     同一套阈值与同一张换算表，两份实现迟早在「生成器说一般、检测说弱」这种
+     地方分叉，而分叉后两边看着都正常。 */
+  var P = T.password;
+  if (!P) {
+    bail('js/password-utils.js 没有加载成功。');
+    return;
+  }
+
   var C = R.CHARSETS;
   var WL = (T.wordlists && T.wordlists.effLarge) || [];
 
@@ -103,19 +113,11 @@
   var MIN_WORDS = 3, MAX_WORDS = 10;
   var MIN_COUNT = 1, MAX_COUNT = 100;
 
-  /* 离线爆破假设：攻击者每秒能试 1000 亿次，对应 MD5 / SHA 这类快速哈希。
+  /* 爆破时间与强度分档见 js/password-utils.js（`T.password`）。
+     离线爆破的假设（每秒 1000 亿次，对应 MD5 / SHA 这类快速哈希）也在那边，
      取平均命中位置，所以时间 = 2^熵值 / (2 × 每秒次数)。 */
-  var GUESSES_PER_SEC = 1e11;
-  var LOG10_DENOM = Math.log10(2 * GUESSES_PER_SEC);
-  var LOG10_YEAR = Math.log10(31536000);
-
-  /* 强度分档（比特） */
-  var LEVELS = [
-    { max: 40,       level: 1, label: '弱',   note: '能被枚举，别用在真实账号上' },
-    { max: 60,       level: 2, label: '一般', note: '能挡住随手的尝试，重要账号还不够' },
-    { max: 80,       level: 3, label: '强',   note: '适合绝大多数账号' },
-    { max: Infinity, level: 4, label: '很强', note: '适合主邮箱、网银与密钥' }
-  ];
+  function levelOf(bits) { return P.levelOf(bits); }
+  function crackTime(bits) { return P.crackTimeFromBits(bits, P.DEFAULT_GUESSES_PER_SEC); }
 
   /* --- 2. 取元素 --------------------------------------------------------- */
 
@@ -215,41 +217,7 @@
     return picked.join(sep);
   }
 
-  /* --- 4. 强度与爆破时间 ------------------------------------------------- */
-
-  function levelOf(bits) {
-    for (var i = 0; i < LEVELS.length; i++) {
-      if (bits < LEVELS[i].max) return LEVELS[i];
-    }
-    return LEVELS[LEVELS.length - 1];
-  }
-
-  function fmtNum(v) {
-    return v >= 10 ? String(Math.round(v)) : String(Number(v.toFixed(1)));
-  }
-
-  /**
-   * 把熵值换算成「平均要试多久」。
-   * 全程在对数空间算 —— 上游用 Math.pow(2, entropy)，熵值一大就溢出成 Infinity。
-   */
-  function crackTime(bits) {
-    var l = bits * Math.log10(2) - LOG10_DENOM;   /* log10(秒) */
-
-    if (l < 0) return '瞬间';
-    if (l < Math.log10(60))    return fmtNum(Math.pow(10, l)) + ' 秒';
-    if (l < Math.log10(3600))  return fmtNum(Math.pow(10, l) / 60) + ' 分钟';
-    if (l < Math.log10(86400)) return fmtNum(Math.pow(10, l) / 3600) + ' 小时';
-    if (l < LOG10_YEAR)        return fmtNum(Math.pow(10, l) / 86400) + ' 天';
-
-    var y = l - LOG10_YEAR;   /* log10(年) */
-    if (y < 4)  return fmtNum(Math.pow(10, y)) + ' 年';
-    if (y < 8)  return fmtNum(Math.pow(10, y - 4)) + ' 万年';
-    if (y < 12) return fmtNum(Math.pow(10, y - 8)) + ' 亿年';
-    if (y < 16) return fmtNum(Math.pow(10, y - 12)) + ' 万亿年';
-    return '约 10^' + Math.round(y) + ' 年';
-  }
-
-  /* --- 5. 渲染 ----------------------------------------------------------- */
+  /* --- 4. 渲染 ----------------------------------------------------------- */
 
   function stat(label, value, cls) {
     return '<div class="stat">' +
@@ -306,7 +274,7 @@
     statusEl.innerHTML = '<span class="is-error">' + T.util.esc(msg) + '</span>';
   }
 
-  /* --- 6. 主循环 --------------------------------------------------------- */
+  /* --- 5. 主循环 --------------------------------------------------------- */
 
   function update() {
     var isPass = state.mode === 'passphrase';
@@ -414,7 +382,7 @@
 
   var render = T.util.debounce(update, 90);
 
-  /* --- 7. 事件 ----------------------------------------------------------- */
+  /* --- 6. 事件 ----------------------------------------------------------- */
 
   modeBox.addEventListener('click', function (e) {
     var chip = e.target.closest('[data-mode]');
@@ -470,7 +438,7 @@
     });
   }
 
-  /* --- 8. 首屏 ----------------------------------------------------------- */
+  /* --- 7. 首屏 ----------------------------------------------------------- */
 
   renderModes();
   renderClasses();

@@ -42,6 +42,7 @@ tools-box/
 │   ├── site.js                主题、导航、卡片渲染、搜索、公共工具方法
 │   ├── color-utils.js         颜色换算、对比度与混合模式（颜色类工具共用）
 │   ├── random-utils.js        随机取样与字符集（生成器类工具共用）
+│   ├── password-utils.js      爆破时间、强度分档与强度估算（两个密码工具共用）
 │   ├── lorem-corpus.js        占位文本语料（拉丁 + 中文）
 │   ├── mock-data-corpus.js    测试数据语料（姓氏、地名、公司词…）
 │   ├── vendor/                自托管的第三方资源（见 THIRD-PARTY.md）
@@ -73,6 +74,7 @@ tools-box/
 │       ├── markdown-preview.js 移植
 │       ├── jwt-decoder.js     JWT 解码（自研）
 │       ├── base64.js          Base64 编解码（移植）
+│       ├── password-strength.js 密码强度检测（自研）
 │       ├── kcwiki-voiceline.js KCWiki 语音台词（自研）
 │       └── whisper-verifier.js 日语语音校对（自研）
 ├── hubs/<id>/index.html       七个分类页（由脚本生成，不要手改）
@@ -92,7 +94,7 @@ tools-box/
 | 分类 | 已上线 | 规划中 | 已挂起 |
 |---|---|---|---|
 | 开发者 | JSON 格式化、CSV 查看器、Markdown 预览、Markdown 转 HTML、文本差异对比、正则表达式测试 | 0 | 5 |
-| 安全 | Base64 编解码、JWT 解码 | 6 | 0 |
+| 安全 | Base64 编解码、JWT 解码、密码强度检测 | 5 | 0 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
@@ -146,6 +148,7 @@ tools-box/
 | 数字格式化 | 自研 | — |
 | 进制转换 | 自研 | — |
 | JWT 解码 | 自研 | — |
+| 密码强度检测 | 自研 | — |
 | 空白清理 | 自研 | — |
 | Slug 生成 | 自研 + [Unihan 拼音数据](https://www.unicode.org/reports/tr38/) | — / Unicode License v3.0 |
 | KCWiki 语音台词 | 自研（由本机旧版个人工具整理迁移） | — |
