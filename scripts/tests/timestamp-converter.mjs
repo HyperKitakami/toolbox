@@ -278,7 +278,13 @@ export default async function run() {
   await setInput(String(Math.ceil(Date.now() / 1000) + 7200));
   ok('2 小时后', get('相对现在') === '2 小时后', get('相对现在'));
   await setInput(String(Math.floor(Date.now() / 1000)));
-  ok('刚刚', get('相对现在') === '刚刚',
+  /* 秒级输入 vs 毫秒级的「现在」：capture 之后只要跨过一个整秒，diff 就从
+     「不足 1 秒」变成「1 秒出头」，标签跟着从「刚刚」变成「1 秒前」。
+     全量跑时这个套件前前后后要等好几秒，命中概率不低（单独跑几乎不会）——
+     踩过一次全量红、单跑绿。两档都是「最近一秒内」的正确输出，断言放宽到这两种；
+     别的档位（2 小时前 / 3 天前 / 2 年后）照旧严格比较。 */
+  ok('刚刚（跨过一个整秒就是「1 秒前」）',
+     ['刚刚', '1 秒前'].includes(get('相对现在')),
      'rel=' + JSON.stringify(get('相对现在')) + ' 行数=' + rowEls().length +
      ' 状态=' + JSON.stringify(status()) + ' 输入=' + JSON.stringify($('#ts-input').value));
   await setInput(String(Math.floor(Date.now() / 1000) - 86400 * 3));
