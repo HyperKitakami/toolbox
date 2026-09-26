@@ -72,6 +72,7 @@ tools-box/
 │       ├── csv-viewer.js     移植
 │       ├── markdown-preview.js 移植
 │       ├── jwt-decoder.js     JWT 解码（自研）
+│       ├── base64.js          Base64 编解码（移植）
 │       ├── kcwiki-voiceline.js KCWiki 语音台词（自研）
 │       └── whisper-verifier.js 日语语音校对（自研）
 ├── hubs/<id>/index.html       七个分类页（由脚本生成，不要手改）
@@ -91,7 +92,7 @@ tools-box/
 | 分类 | 已上线 | 规划中 | 已挂起 |
 |---|---|---|---|
 | 开发者 | JSON 格式化、CSV 查看器、Markdown 预览、Markdown 转 HTML、文本差异对比、正则表达式测试 | 0 | 5 |
-| 安全 | JWT 解码 | 7 | 0 |
+| 安全 | Base64 编解码、JWT 解码 | 6 | 0 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
@@ -136,6 +137,7 @@ tools-box/
 | UUID 生成器 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `uuid-generator` | MIT |
 | 时间戳转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `timestamp-converter` | MIT |
 | 文本大小写转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `text-case` | MIT |
+| Base64 编解码 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `base64` | MIT |
 | 文本差异对比 | 自研 | — |
 | 字数统计 | 自研 | — |
 | 随机字符串 | 自研 | — |
@@ -247,7 +249,7 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 [Iris Digital](https://irisdigital.tech/) 构建并维护的隐私优先工具集，
 同样以 MIT 许可开源。本项目的整体形态（纯静态、零依赖、100% 客户端运行、
 一个工具一个目录加一个脚本）直接参考了它的做法，
-目前有十七个工具是基于它移植而来：
+目前有十八个工具是基于它移植而来：
 
 - **正则表达式测试** ← `regex-tester`：沿用其模式解释算法、界面结构与交互流程
 - **JSON 格式化** ← `json-formatter`：沿用其格式化 / 压缩 / 校验的功能划分与粘贴即格式化
@@ -274,8 +276,12 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
   并按 RFC 9562 补上 v7 的同毫秒单调计数器与 v1 的节点多播位
 - **时间戳转换** ← `timestamp-converter`：沿用其双向输入、结果字段与批量表格，
   补上纳秒档与可手动覆盖的单位选择、多时区对照表
+- **文本大小写转换** ← `text-case`：沿用其 10 种命名风格与整段大小写转换，
+  并把驼峰切分补上缩写词那一遍、让非拉丁字母不再被静默丢弃
+- **Base64 编解码** ← `base64`：沿用其编码/解码双按钮、URL 安全与自动判定开关、
+  文件拖放与图片预览，并把「自动判定」从只看字符集改成要求解出合法 UTF-8 文本
 
-十六者都做了中文化、设计系统统一，并修复了上游缺陷 ——
+十八者都做了中文化、设计系统统一，并修复了上游缺陷 ——
 正则工具修掉了空匹配死循环与分享链接 base64 填充导致的参数丢失；
 JSON 工具重写了语法高亮（上游因为「先转义再匹配」导致键名与字符串值完全不着色）；
 Markdown 工具移除了 Prism 依赖，改用内置的轻量 HTML 着色；
@@ -303,7 +309,14 @@ v7 在同一毫秒内的单调计数器（RFC 明确点名了批量场景）、
 时间戳转换修掉了 19 位纳秒时间戳被当成微秒（会算出公元 56385 年且不报错）、
 带小数的秒级时间戳解析不了而同样形态的短小数却被当成日期解析、`+` 开头的数字解析不了、
 裸日期的时区口径不告知、自动判定的单位不允许覆盖、批量没有行数上限，
-并把时区行改用 `formatToParts` 自己拼字符串以摆脱 locale 的影响。
+并把时区行改用 `formatToParts` 自己拼字符串以摆脱 locale 的影响；
+文本大小写转换修掉了驼峰切分认不出缩写词尾巴（`getHTTPResponse` → `get_httpresponse`）、
+非拉丁字母被当成分隔符静默丢弃（`café` → `caf`、中文整段变空串）、
+Sentence case 不认中文标点、Title Case 把撇号当词边界（`don't` → `Don'T`）这几处；
+Base64 修掉了自动判定把普通英文单词当 Base64（EFF 7776 个常用词实测误判 78.5%）、
+把合法的二进制 Base64 报成「无效串」（报出来的原因不是真原因）、不认 MIME 折行
+（于是自动判定把 Base64 又编码一遍）、复制裸调 `navigator.clipboard` 没有降级，
+并把「代理项被静默替换成 U+FFFD」这件事显式报了出来。
 
 **库与数据的作者们**：[marked](https://github.com/markedjs/marked)（MarkedJS、Christopher Jeffrey）、
 [DOMPurify](https://github.com/cure53/DOMPurify)（Cure53），以及

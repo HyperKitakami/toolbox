@@ -2645,3 +2645,72 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
   /* 窄屏下把「值」列宽收掉，否则固定的 300px 会把说明列挤没 */
   .jwt-claims .jwt-claim-value { max-width: none; }
 }
+
+/* --- 40. Base64 编解码 --------------------------------------------------- */
+
+/* Base64 是一整行没有空格的串，断点只能落在任意字符之间。
+   默认的 break-word 会先试 + / 这类位置，看起来参差不齐；
+   这里直接 break-all，每行填满。 */
+.b64-out { word-break: break-all; }
+
+/* 解码出来的不是 UTF-8 文本时，结果区换成十六进制字节视图：整屏数字，弱化一档 */
+.b64-hex { word-break: break-all; color: var(--text-muted); }
+
+/* 依赖缺失时的可见提示（正常情况下不出现） */
+.b64-bail { font-family: var(--font-sans); color: var(--warn); }
+
+/* 状态行在面板底栏里：.tool-status 自带 margin-top，这里要收掉 */
+.panel-foot .tool-status { margin-top: 0; }
+
+/* 两个方向按钮与「结果换到输入」成一行 */
+.b64-actions { margin-top: 10px; }
+
+/* .panel-body > .toolbar 已有 margin-top: 14px，选项条挨着 textarea 时收窄一点 */
+.panel-body > .toolbar:first-of-type { margin-top: 12px; }
+
+/* 文件信息卡：左预览 + 右文字，窄屏改成上下 */
+.b64-filecard {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+/* 已被 base.css 第 3 节的 [hidden] { display: none !important } 覆盖，
+   留着是给未来改那条规则的人看 */
+.b64-filecard[hidden],
+.b64-preview[hidden] { display: none; }
+
+.b64-preview {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+
+.b64-filecard-text { min-width: 0; flex: 1 1 auto; }
+
+/* 文件名可能很长（data-2026-09-26-very-long-name.png），允许折断 */
+.b64-filename {
+  margin: 0;
+  font-weight: 620;
+  word-break: break-all;
+}
+.b64-filemeta {
+  margin: 3px 0 0;
+  font-size: .8rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+.b64-filecard .toolbar { margin-top: 10px; }
+
+@media (max-width: 560px) {
+  .b64-filecard { flex-direction: column; }
+  .b64-preview { width: 100%; height: 140px; }
+}

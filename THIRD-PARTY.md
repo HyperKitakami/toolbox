@@ -617,6 +617,93 @@
 
 ---
 
+### 18. Base64 编解码
+
+| | |
+|---|---|
+| 上游文件 | `base64/index.html`（8961 B）、`js/tools/base64.js`（5136 B） |
+| 本项目文件 | `tools/base64/index.html`、`js/tools/base64.js` |
+
+改动：
+
+- 界面文案、状态行、错误提示全量中文化；上游的 `js/common.js`
+  （`escapeHtml` / `showToast` / `copyToClipboard`）未引入
+- 改用本项目的设计系统与组件类名（`.panel` / `.tool-body` / `.toolbar` /
+  `.output` / `.stat-grid` / `.drop-zone` / `.tool-status`）；复制走全局的 `T.util.copy`
+- 上游的界面结构保留：输入框 + 编码/解码双按钮 + URL 安全与自动判定两个开关 +
+  文件拖放 + 体积计数 + 图片预览
+
+#### 修复的缺陷
+
+判定依据是把上游的 `isBase64` / `toUrlSafe` / `fromUrlSafe` 三个纯函数抽出来单独跑
+边界用例（`.temporary/base64/probe-upstream.mjs`），并用 EFF 7776 个常用英文单词
+逐个量过自动判定的误判率（`.temporary/base64/probe-detect.mjs`）。
+下面每条都有可复现的输入。
+
+- **自动判定把普通英文单词当成 Base64（算法错误）。** 上游 `isBase64()` 只查
+  「字符集 + `length % 4 <= 2`」，完全不管解出来的是什么：
+
+  | 输入 | 上游 `isBase64` | 上游自动判定的走向 |
+  |---|---|---|
+  | `hello` | true | 走解码 → `URIError` → 界面只显示 `Error: Invalid Base64 string` |
+  | `abcdef` | true | 同上 |
+  | `12345678` | true | 同上 |
+  | `content` | false | 正常编码（长度 7，`7 % 4 = 3 > 2`） |
+
+  量化的结论：**EFF 7776 个常用英文单词里有 6103 个（78.5%）会被判成 Base64**。
+  本工具加了两道闸门 —— ① 解出来的字节必须是合法的 UTF-8 文本；
+  ② 纯 ASCII 字母的串一律按文本处理 —— 加完之后同样的 7776 个词是 **0 个**误判。
+  代价写在页面说明区：全字母且无填充的 Base64（如 `YWJj`）会被当成文本，
+  手动点「Base64 解码」即可。宁可漏判（多点一下）也不误判（把正常文本搅成乱码）。
+
+- **把「合法 Base64 但内容不是 UTF-8 文本」报成无效串（原因说错）。**
+  上游解码写的是 `decodeURIComponent(escape(atob(raw)))`：只要解出来的字节不是
+  合法 UTF-8（二进制文件的 Base64 全是这样），`decodeURIComponent` 就抛 `URIError`，
+  被上层统一的 `catch` 吞掉，报出来是 `Error: Invalid Base64 string` ——
+  而那个串**完全合法**，用户照着这个提示去改只会越改越错。
+  本工具把三种失败分开报（非法字符 / 填充位置 / 长度），并且「内容是二进制」
+  这一种不再空手而归：结果区给出**十六进制字节视图**，状态行说明解出了多少字节。
+
+- **不认 MIME 折行（自动判定反了方向）。** 邮件里的 Base64 每 76 个字符折一次行，
+  上游 `isBase64()` 的正则不允许换行 → 判成普通文本 →
+  **自动判定把这段 Base64 又编码了一遍**。本工具在判定与解码前都先剥掉全部
+  ASCII 空白（空格、制表符、换行），折行的串照样能解。
+
+- **复制裸调 `navigator.clipboard.writeText`（静默失败）。** 非安全上下文
+  （http 的非 localhost、`file://`）里 `navigator.clipboard` 不存在，直接抛
+  `TypeError`，而且抛在 `showToast` 之前 —— 用户点「复制」什么都不会发生，
+  连个提示都没有。本工具走 `T.util.copy`（安全上下文用 Clipboard API，
+  否则退回 `document.execCommand`），按钮给出「已复制」反馈。
+
+- **`unescape(encodeURIComponent())` / `escape()` 已废弃。** 换成
+  `TextEncoder` / `TextDecoder`（带特性检测，老引擎退回原写法）。
+  顺带补一处上游没有的可见性：`TextEncoder` 会把**不成对**的代理项**静默**
+  换成 `U+FFFD`（�），不报错、看不出丢了什么。本工具显式数一遍，
+  在状态行说明「有 N 个代理项被替换成了 U+FFFD」。
+
+- **文件类型为空时拼出 `data:;base64,`。** 上游直接把 `file.type` 拼进 Data URL，
+  拖进来的 `.md` 或无扩展名文件 type 是空串，得到的是一个没有 MIME 的坏 Data URL。
+  本工具回退 `application/octet-stream`。图片预览也从
+  `imagePreview.innerHTML = '<img src="…">'` 改成 DOM 建节点 + `.src` 赋值 ——
+  Data URL 是用户数据的直接产物，不该再经过一次 HTML 解析。
+
+#### 新增
+
+- 非法字符**定位到第几个**、`=` 位置校验、长度校验，各给一句独立的中文原因
+  （上游一律报 `Invalid Base64 string`）
+- 统计面板：输入字符 / 字节 / 结果字符 / 体积变化；编码与解码两个方向的标签不同
+- 「结果换到输入」按上一次的方向**反向再跑一遍**（上游只把字符串搬过去，
+  换完还要用户自己再点一次按钮）
+- 分块调 `String.fromCharCode`：几 MB 的文件不会因为参数过多爆栈
+- 结果区与文件卡的「复制」都带回退与反馈
+
+#### 不算缺陷
+
+- **上游把本工具放在「转换」分类，本项目放在「安全」分类。** 这是本站
+  `js/registry.js` 的既有安排（Base64 与哈希、JWT 同组），不是对上游实现的改动。
+
+---
+
 > 上游另有一套 `js/umd-guard.js` / `js/umd-unguard.js`，在加载内置库时临时屏蔽
 > `define` / `module` / `exports` 全局变量，防止 UMD 加载被劫持。本项目有严格 CSP
 > 且不加载任何内联脚本，未引入这套防护。
