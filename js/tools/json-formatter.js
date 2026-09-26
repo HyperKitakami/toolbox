@@ -74,40 +74,12 @@
   /* ======================================================================
      一、语法高亮
      ----------------------------------------------------------------------
-     单遍扫描：按出现顺序识别 字符串 / 数字 / 字面量，中间的空白与括号
-     原样转义输出。这样不会出现「已经插入的 HTML 被后续正则再次匹配」的
-     问题，也不会把字符串里的数字当成数字。
+     高亮实现已收到 js/site.js 的 T.util.highlightJson —— JWT 解码也要用同一套
+     记号化逻辑，两处各留一份迟早会在「转义顺序」或「键名判定」上分叉。
+     这里只留一个引用，调用点不用改。
      ====================================================================== */
 
-  /* 顺序不能变：字符串优先，否则字符串里的数字会被当成数字 */
-  var RE_TOKEN = /"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\b(?:true|false|null)\b/g;
-
-  function highlightLine(line) {
-    var out = '';
-    var last = 0;
-    var m;
-
-    RE_TOKEN.lastIndex = 0;
-    while ((m = RE_TOKEN.exec(line)) !== null) {
-      out += esc(line.slice(last, m.index));
-
-      var tok = m[0];
-      if (tok.charAt(0) === '"') {
-        /* 后面紧跟冒号的字符串是键名，否则是字符串值 */
-        var isKey = /^\s*:/.test(line.slice(m.index + tok.length));
-        out += '<span class="tok-' + (isKey ? 'key' : 'str') + '">' + esc(tok) + '</span>';
-      } else if (tok === 'true' || tok === 'false' || tok === 'null') {
-        out += '<span class="tok-bool">' + esc(tok) + '</span>';
-      } else {
-        out += '<span class="tok-num">' + esc(tok) + '</span>';
-      }
-
-      last = m.index + tok.length;
-    }
-
-    out += esc(line.slice(last));
-    return out;
-  }
+  var highlightLine = T.util.highlightJson;
 
   function viewClass() {
     return 'code-view' + (wrapEl && wrapEl.checked ? ' code-view--wrap' : '');

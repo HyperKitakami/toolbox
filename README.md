@@ -71,6 +71,7 @@ tools-box/
 │       ├── markdown-to-html.js 移植
 │       ├── csv-viewer.js     移植
 │       ├── markdown-preview.js 移植
+│       ├── jwt-decoder.js     JWT 解码（自研）
 │       ├── kcwiki-voiceline.js KCWiki 语音台词（自研）
 │       └── whisper-verifier.js 日语语音校对（自研）
 ├── hubs/<id>/index.html       七个分类页（由脚本生成，不要手改）
@@ -90,7 +91,7 @@ tools-box/
 | 分类 | 已上线 | 规划中 | 已挂起 |
 |---|---|---|---|
 | 开发者 | JSON 格式化、CSV 查看器、Markdown 预览、Markdown 转 HTML、文本差异对比、正则表达式测试 | 0 | 5 |
-| 安全 | — | 8 | 0 |
+| 安全 | JWT 解码 | 7 | 0 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
@@ -142,6 +143,7 @@ tools-box/
 | 单位换算 | 自研 | — |
 | 数字格式化 | 自研 | — |
 | 进制转换 | 自研 | — |
+| JWT 解码 | 自研 | — |
 | 空白清理 | 自研 | — |
 | Slug 生成 | 自研 + [Unihan 拼音数据](https://www.unicode.org/reports/tr38/) | — / Unicode License v3.0 |
 | KCWiki 语音台词 | 自研（由本机旧版个人工具整理迁移） | — |

@@ -2487,3 +2487,161 @@ kbd.hint-key {
   .wv-submit { width: 100%; margin-left: 0; }
   .wv-lang { width: 100%; }
 }
+
+/* --- 39. JWT 解码（三段格子、声明表、签名栏） --------------------------- */
+
+/* 39.1 三段格子：每格是一个按钮（点了切到那一段的解码内容）。
+   地址栏里那点色块只是「第几段」的视觉锚点，不用它区分含义 ——
+   含义由格子里的名字承担，色盲用户也读得出来。 */
+.jwt-parts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+/* 空的时候整块不占位（首屏与解析失败时都在这里渲染成空串） */
+.jwt-parts:empty { display: none; }
+
+.jwt-part {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  text-align: left;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+button.jwt-part { cursor: pointer; }
+button.jwt-part:hover { border-color: var(--border-strong); background: var(--surface); }
+.jwt-part[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--hub-accent, var(--accent)) 45%, var(--border));
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 10%, transparent);
+}
+/* 不可点的那几格（JWE 的密文段之类）：去掉悬停反馈，但保留排版 */
+.jwt-part--static { cursor: default; }
+
+.jwt-part-swatch {
+  grid-row: 1 / 3;
+  width: 6px;
+  height: 100%;
+  min-height: 30px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--hub-accent, var(--accent)) 30%, transparent);
+}
+.jwt-part-swatch--p { background: color-mix(in srgb, var(--hub-accent, var(--accent)) 55%, transparent); }
+.jwt-part-swatch--s { background: color-mix(in srgb, var(--hub-accent, var(--accent)) 12%, transparent); }
+
+.jwt-part-name {
+  font-size: .8rem;
+  font-weight: 650;
+  color: var(--text);
+}
+.jwt-part-len {
+  font-family: var(--font-mono);
+  font-size: .74rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 概览的统计格。通用最小值 132px 在两栏布局里排得下 4 个、第 5 个会折行，
+   所以这一组单独收窄到 104px（两栏列宽 571 - 28 = 543px，5 × 104 + 4 × 10 = 560
+   仍然会折 —— 直接按 3 列排两行，宽屏窄屏都是稳定的 3 列）。 */
+.jwt-stats { grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); }
+
+/* 39.2 动态安全提示：一块块竖排，没问题时整块隐藏 */
+.jwt-warns { display: grid; gap: 12px; }
+/* 全局那条 [hidden] { display: none !important } 已经管住了，
+   这里再写一条是因为本容器自带 display: grid —— 留着给将来改 base.css 的人看 */
+.jwt-warns[hidden] { display: none; }
+.jwt-warns .notice { margin: 0; }
+
+/* 39.3 声明表 */
+.jwt-claims .jwt-claim-key {
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+/* 值是 JSON：对象 / 数组会很长，允许换行并限宽，免得把说明列挤没 */
+.jwt-claims .jwt-claim-value {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  color: var(--text-muted);
+  white-space: normal;
+  max-width: 300px;
+  overflow-wrap: anywhere;
+}
+/* 说明列是关键信息（含义 + 时间 + 相对现在），不截断 */
+.jwt-claims .jwt-claim-note { white-space: normal; }
+.jwt-claims .data-table { table-layout: fixed; }
+.jwt-claims .data-table th:nth-child(1) { width: 20%; }
+.jwt-claims .data-table th:nth-child(2) { width: 30%; }
+
+.jwt-claim-kind {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: var(--bg-inset);
+  color: var(--text-faint);
+  font-size: .7rem;
+}
+.jwt-claim-name { color: var(--text-muted); }
+.jwt-claim-note-text { color: var(--text-faint); }
+.jwt-claim-note-text::before { content: " · "; }
+.jwt-claim-fix {
+  margin-left: 6px;
+  color: var(--warn);
+  font-size: .76rem;
+}
+
+/* 时间列：等宽数字，按结论上色（还剩 / 已过期 / 还没生效） */
+.jwt-time {
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.jwt-time--ok   { color: var(--ok); }
+.jwt-time--warn { color: var(--warn); }
+.jwt-time--bad  { color: var(--danger); }
+
+/* 39.4 签名栏：三行「标签 + 值」，点哪行复制哪行，下面跟一句这个值是什么 */
+.jwt-sig { display: grid; gap: 10px; padding: 14px; }
+.jwt-sig[hidden] { display: none; }
+.jwt-sig-item { display: grid; gap: 4px; }
+.jwt-sig-item .value-row { grid-template-columns: 74px minmax(0, 1fr); align-items: start; }
+.jwt-sig-item .value-text { word-break: break-all; }
+.jwt-sig-sub {
+  margin: 0;
+  padding-left: 11px;
+  font-size: .76rem;
+  color: var(--text-faint);
+}
+.jwt-sig-note {
+  margin: 2px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: .78rem;
+  color: var(--text-muted);
+}
+
+/* 39.5 面板底栏里的状态：解析失败要能一眼看到 */
+.jwt-status.is-error { color: var(--danger); font-weight: 650; }
+
+/* Tab 胶囊自带 display，[hidden] 会被压过去（全局那条 !important 管着，
+   这里留一条高权重的兜底，JWE 只剩一个 Tab 时用得上） */
+.choice-chip[hidden] { display: none; }
+
+@media (max-width: 560px) {
+  .jwt-parts { grid-template-columns: minmax(0, 1fr); }
+  .jwt-sig { padding: 12px 10px; }
+  .jwt-sig-item .value-row { grid-template-columns: 64px minmax(0, 1fr); }
+  /* 窄屏下把「值」列宽收掉，否则固定的 300px 会把说明列挤没 */
+  .jwt-claims .jwt-claim-value { max-width: none; }
+}

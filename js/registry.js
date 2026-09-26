@@ -187,8 +187,8 @@
       ['hash', 'sha256', 'md5', '摘要'], 'planned', 86],
 
     ['jwt-decoder', 'JWT 解码', 'security',
-      '解析 JWT 的头部与载荷，友好展示过期时间与常见声明（不校验签名）。',
-      ['jwt', 'token', '解码'], 'planned', 84],
+      '拆开 JWT 的头部、载荷与签名三段：载荷按 JSON 着色展开，exp / nbf / iat 换算成本机时区的时间与剩余时长，并标出 alg=none、crit、jku 这类要留神的头字段；签名只展示不校验。',
+      ['jwt', 'token', '解码', '过期'], 'ready', 84],
 
     ['url-encoder', 'URL 编解码', 'security',
       '对 URL、查询参数与组件进行百分号编码或解码。',

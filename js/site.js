@@ -541,6 +541,47 @@
     return lines.length;
   }
 
+  /* --- 10b. JSON 语法高亮（JSON 格式化 / JWT 解码共用） ------------------ */
+
+  /* 单遍扫描：按出现顺序识别 字符串 / 数字 / 字面量，中间的空白与括号原样转义输出。
+     这样不会出现「已经插入的 HTML 被后续正则再次匹配」的问题，
+     也不会把字符串里的数字当成数字（见 json-formatter 的踩坑记录）。
+     顺序不能变：字符串优先。 */
+  var RE_JSON_TOKEN = /"(?:\\.|[^"\\])*"|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|\b(?:true|false|null)\b/g;
+
+  /**
+   * 把一行 JSON 渲染成带 .tok-* 着色的 HTML。
+   * 逐行调用即可配 renderCode：JSON.stringify 出来的字符串不会跨行。
+   * @param {string} line
+   * @returns {string} HTML
+   */
+  function highlightJson(line) {
+    var out = '';
+    var last = 0;
+    var m;
+
+    RE_JSON_TOKEN.lastIndex = 0;
+    while ((m = RE_JSON_TOKEN.exec(line)) !== null) {
+      out += esc(line.slice(last, m.index));
+
+      var tok = m[0];
+      if (tok.charAt(0) === '"') {
+        /* 后面紧跟冒号的字符串是键名，否则是字符串值 */
+        var isKey = /^\s*:/.test(line.slice(m.index + tok.length));
+        out += '<span class="tok-' + (isKey ? 'key' : 'str') + '">' + esc(tok) + '</span>';
+      } else if (tok === 'true' || tok === 'false' || tok === 'null') {
+        out += '<span class="tok-bool">' + esc(tok) + '</span>';
+      } else {
+        out += '<span class="tok-num">' + esc(tok) + '</span>';
+      }
+
+      last = m.index + tok.length;
+    }
+
+    out += esc(line.slice(last));
+    return out;
+  }
+
   /**
    * 在容器里显示一条空状态提示。
    * @param {HTMLElement} box
@@ -663,6 +704,7 @@
     copy: copyText,
     toast: toast,
     renderCode: renderCode,
+    highlightJson: highlightJson,
     emptyHint: emptyHint,
     readingMinutes: readingMinutes,
     formatDuration: formatDuration,
