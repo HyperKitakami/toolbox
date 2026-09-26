@@ -33,6 +33,7 @@
 
   var esc = T.util.esc;
   var C = T.color;
+  var Q = T.qr;
 
   if (typeof qrcode === 'undefined') {
     T.util.toast('二维码引擎未能加载');
@@ -44,13 +45,19 @@
     return;
   }
 
+  /* 模块矩阵 → SVG / canvas 的几何在 js/qr-utils.js（TOTP 的 otpauth 二维码
+     用的是同一份）。留白宽度与定位图案判定只要有一处分叉，
+     就会有一个渲染结果扫不出来 —— 而那是肉眼查不出来的。 */
+  if (!Q) {
+    T.util.toast('二维码几何模块未能加载');
+    return;
+  }
+
   /* qrcode-generator 默认按 Latin-1 处理字符串，中文会变成乱码。
      换成库自带的 UTF-8 编码器 —— 这是它提供的官方扩展点。 */
   qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
 
   /* --- 常量 -------------------------------------------------------------- */
-  var QUIET = 4;           /* 四周留白（模块数），规范要求至少 4 */
-  var LOGO_RATIO = 0.22;   /* Logo 边长占二维码边长的比例 */
   var MIN_SIZE = 120;
   var MAX_SIZE = 640;
 
@@ -241,10 +248,8 @@
     return n;
   }
 
-  /** 三个定位角必须保持实心方块 —— 扫描器靠它们定位 */
-  function isFinder(r, c, n) {
-    return (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
-  }
+  /** 三个定位角必须保持实心方块 —— 扫描器靠它们定位。
+      判定与留白都在 js/qr-utils.js 里（TOTP 的二维码共用同一份）。 */
 
   /**
    * 前景应该比背景暗。反色的二维码很多扫描器读不出来 ——
@@ -274,59 +279,18 @@
   /**
    * 生成 SVG 字符串。预览与「下载 SVG」用的是同一份输出。
    *
-   * shape-rendering 按样式选：方块用 crispEdges（边缘不糊），
-   * 圆点与圆角用 geometricPrecision（曲线平滑）。
+   * shape-rendering / 留白 / 定位图案这些几何在 js/qr-utils.js（`T.qr.toSvg`），
+   * 这里只负责把页面上那几个控件读成参数。
    */
   function buildSvg(qr) {
-    var fg = fgValue();
-    var bg = bgValue();
-    var style = styleValue();
-    var dim = sizeValue();
-    var count = qr.getModuleCount();
-    var total = count + QUIET * 2;
-    var shapes = '';
-    var r, c, x, y;
-
-    for (r = 0; r < count; r++) {
-      for (c = 0; c < count; c++) {
-        if (!qr.isDark(r, c)) continue;
-
-        x = c + QUIET;
-        y = r + QUIET;
-
-        if (style === 'square' || isFinder(r, c, count)) {
-          shapes += '<rect x="' + x + '" y="' + y + '" width="1" height="1"/>';
-        } else if (style === 'dots') {
-          shapes += '<circle cx="' + (x + 0.5) + '" cy="' + (y + 0.5) + '" r="0.5"/>';
-        } else {
-          shapes += '<rect x="' + x + '" y="' + y + '" width="1" height="1" rx="0.3" ry="0.3"/>';
-        }
-      }
-    }
-
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg"' +
-      (logoDataUrl ? ' xmlns:xlink="http://www.w3.org/1999/xlink"' : '') +
-      ' viewBox="0 0 ' + total + ' ' + total + '" width="' + dim + '" height="' + dim + '"' +
-      ' shape-rendering="' + (style === 'square' ? 'crispEdges' : 'geometricPrecision') + '"' +
-      ' role="img" aria-label="二维码">';
-
-    svg += '<rect width="100%" height="100%" fill="' + bg + '"/>';
-    svg += '<g fill="' + fg + '">' + shapes + '</g>';
-
-    if (logoDataUrl) {
-      var ls = total * LOGO_RATIO;
-      var pad = ls * 0.12;
-      var off = (total - ls) / 2;
-
-      svg += '<rect x="' + (off - pad) + '" y="' + (off - pad) + '" width="' + (ls + pad * 2) +
-        '" height="' + (ls + pad * 2) + '" fill="' + bg + '"/>';
-      /* href 是 SVG 2 的写法，xlink:href 兼容老工具，两个都写 */
-      svg += '<image href="' + logoDataUrl + '" xlink:href="' + logoDataUrl + '" x="' + off +
-        '" y="' + off + '" width="' + ls + '" height="' + ls +
-        '" preserveAspectRatio="xMidYMid meet"/>';
-    }
-
-    return svg + '</svg>';
+    return Q.toSvg(qr, {
+      dim: sizeValue(),
+      fg: fgValue(),
+      bg: bgValue(),
+      style: styleValue(),
+      logoDataUrl: logoDataUrl,
+      label: '二维码'
+    });
   }
 
   function emptyPreview(title, desc) {
@@ -390,63 +354,17 @@
      四、导出
      ====================================================================== */
 
-  function roundRectPath(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  /** 把二维码画到一个 2d 上下文里，PNG 导出与复制图片共用 */
+  /** 把二维码画到一个 2d 上下文里，PNG 导出与复制图片共用。
+      几何（模块形状、留白、Logo 遮罩）在 js/qr-utils.js（`T.qr.toCanvas`） */
   function drawToCanvas(canvas, ctx) {
-    var count = lastQr.getModuleCount();
-    var total = count + QUIET * 2;
-    var cell = Math.max(1, Math.floor(sizeValue() / total));
-    var dim = cell * total;
-    var style = styleValue();
-    var r, c, x, y;
-
-    canvas.width = dim;
-    canvas.height = dim;
-
-    ctx.fillStyle = bgValue();
-    ctx.fillRect(0, 0, dim, dim);
-    ctx.fillStyle = fgValue();
-
-    for (r = 0; r < count; r++) {
-      for (c = 0; c < count; c++) {
-        if (!lastQr.isDark(r, c)) continue;
-
-        x = (c + QUIET) * cell;
-        y = (r + QUIET) * cell;
-
-        if (style === 'square' || isFinder(r, c, count)) {
-          ctx.fillRect(x, y, cell, cell);
-        } else if (style === 'dots') {
-          ctx.beginPath();
-          ctx.arc(x + cell / 2, y + cell / 2, cell / 2, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          roundRectPath(ctx, x, y, cell, cell, cell * 0.3);
-          ctx.fill();
-        }
-      }
-    }
-
-    if (logoImg) {
-      var ls = Math.round(dim * LOGO_RATIO);
-      var pad = Math.round(ls * 0.12);
-      var off = Math.round((dim - ls) / 2);
-
-      ctx.fillStyle = bgValue();
-      ctx.fillRect(off - pad, off - pad, ls + pad * 2, ls + pad * 2);
-      ctx.drawImage(logoImg, off, off, ls, ls);
-    }
-
-    return dim;
+    return Q.toCanvas(lastQr, ctx, {
+      canvas: canvas,
+      dim: sizeValue(),
+      fg: fgValue(),
+      bg: bgValue(),
+      style: styleValue(),
+      logoImg: logoImg
+    });
   }
 
   function newCanvas() {

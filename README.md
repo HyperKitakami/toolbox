@@ -43,6 +43,8 @@ tools-box/
 │   ├── color-utils.js         颜色换算、对比度与混合模式（颜色类工具共用）
 │   ├── random-utils.js        随机取样与字符集（生成器类工具共用）
 │   ├── password-utils.js      爆破时间、强度分档与强度估算（两个密码工具共用）
+│   ├── hash-utils.js          SHA-1/256/512、HMAC、Base32（安全类共用）
+│   ├── qr-utils.js            二维码的模块矩阵 → SVG / canvas 几何（两个工具共用）
 │   ├── lorem-corpus.js        占位文本语料（拉丁 + 中文）
 │   ├── mock-data-corpus.js    测试数据语料（姓氏、地名、公司词…）
 │   ├── vendor/                自托管的第三方资源（见 THIRD-PARTY.md）
@@ -75,6 +77,7 @@ tools-box/
 │       ├── jwt-decoder.js     JWT 解码（自研）
 │       ├── base64.js          Base64 编解码（移植）
 │       ├── password-strength.js 密码强度检测（自研）
+│       ├── totp-generator.js  TOTP 动态口令（移植）
 │       ├── kcwiki-voiceline.js KCWiki 语音台词（自研）
 │       └── whisper-verifier.js 日语语音校对（自研）
 ├── hubs/<id>/index.html       七个分类页（由脚本生成，不要手改）
@@ -94,7 +97,7 @@ tools-box/
 | 分类 | 已上线 | 规划中 | 已挂起 |
 |---|---|---|---|
 | 开发者 | JSON 格式化、CSV 查看器、Markdown 预览、Markdown 转 HTML、文本差异对比、正则表达式测试 | 0 | 5 |
-| 安全 | Base64 编解码、JWT 解码、密码强度检测 | 5 | 0 |
+| 安全 | Base64 编解码、JWT 解码、密码强度检测、TOTP 动态口令 | 4 | 0 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
@@ -140,6 +143,7 @@ tools-box/
 | 时间戳转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `timestamp-converter` | MIT |
 | 文本大小写转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `text-case` | MIT |
 | Base64 编解码 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `base64` | MIT |
+| TOTP 动态口令 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `totp-generator` | MIT |
 | 文本差异对比 | 自研 | — |
 | 字数统计 | 自研 | — |
 | 随机字符串 | 自研 | — |
@@ -252,7 +256,7 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 [Iris Digital](https://irisdigital.tech/) 构建并维护的隐私优先工具集，
 同样以 MIT 许可开源。本项目的整体形态（纯静态、零依赖、100% 客户端运行、
 一个工具一个目录加一个脚本）直接参考了它的做法，
-目前有十八个工具是基于它移植而来：
+目前有十九个工具是基于它移植而来：
 
 - **正则表达式测试** ← `regex-tester`：沿用其模式解释算法、界面结构与交互流程
 - **JSON 格式化** ← `json-formatter`：沿用其格式化 / 压缩 / 校验的功能划分与粘贴即格式化
@@ -283,8 +287,11 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
   并把驼峰切分补上缩写词那一遍、让非拉丁字母不再被静默丢弃
 - **Base64 编解码** ← `base64`：沿用其编码/解码双按钮、URL 安全与自动判定开关、
   文件拖放与图片预览，并把「自动判定」从只看字符集改成要求解出合法 UTF-8 文本
+- **TOTP 动态口令** ← `totp-generator`：沿用其 Base32 密钥 + 6/8 位 / 30、60 秒 /
+  SHA-1 三组选项、实时倒计时、otpauth 链接与二维码的整套流程，
+  并把 `crypto.subtle` 不可用时的降级路径补上、把二维码从 canvas 换成 SVG
 
-十八者都做了中文化、设计系统统一，并修复了上游缺陷 ——
+十九者都做了中文化、设计系统统一，并修复了上游缺陷 ——
 正则工具修掉了空匹配死循环与分享链接 base64 填充导致的参数丢失；
 JSON 工具重写了语法高亮（上游因为「先转义再匹配」导致键名与字符串值完全不着色）；
 Markdown 工具移除了 Prism 依赖，改用内置的轻量 HTML 着色；
@@ -319,7 +326,14 @@ Sentence case 不认中文标点、Title Case 把撇号当词边界（`don't` �
 Base64 修掉了自动判定把普通英文单词当 Base64（EFF 7776 个常用词实测误判 78.5%）、
 把合法的二进制 Base64 报成「无效串」（报出来的原因不是真原因）、不认 MIME 折行
 （于是自动判定把 Base64 又编码一遍）、复制裸调 `navigator.clipboard` 没有降级，
-并把「代理项被静默替换成 U+FFFD」这件事显式报了出来。
+并把「代理项被静默替换成 U+FFFD」这件事显式报了出来；
+TOTP 动态口令修掉了非安全上下文下 `crypto.subtle` 缺失导致整块不可用且只报一句
+「Error」（现在优先用平台实现、回落自带纯 JS 实现，并写明走的是哪条路）、
+Base32 解码过宽（`AB`、`ABC` 这类残留位非零或长度不合法、抄错一个字符的输入
+会被解成一个「看起来正常」的密钥，于是口令永远对不上却没有任何提示）、
+不检查密钥长度（RFC 4226 §4 R6 要求至少 128 位）、异步算口令没有防竞态
+（改选项时先发的 Promise 可能后到、把过期的口令盖上去），以及 otpauth 链接的编码
+（上游把账号与发行方里的「:」直接删掉 —— 那是静默改用户的输入）。
 
 **库与数据的作者们**：[marked](https://github.com/markedjs/marked)（MarkedJS、Christopher Jeffrey）、
 [DOMPurify](https://github.com/cure53/DOMPurify)（Cure53），以及

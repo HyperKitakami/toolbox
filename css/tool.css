@@ -940,7 +940,9 @@ kbd.hint-key {
    .match-empty（匹配列表）、.regex-explainer-empty（模式解释）、.md-empty（预览）、
    .kv-empty（KCWiki 语音台词：筛选后一条都不剩）、
    .wv-result-empty（日语语音校对：还没开始分析）、
-   .ps-empty（密码强度检测：还没输入 / 没有命中模式） */
+   .ps-empty（密码强度检测：还没输入 / 没有命中模式）、
+   .totp-empty（TOTP：还没填密钥）、
+   .totp-qr-empty（TOTP：二维码未生成 / 已隐藏） */
 .code-empty,
 .table-empty,
 .outline-empty,
@@ -949,7 +951,9 @@ kbd.hint-key {
 .md-empty,
 .kv-empty,
 .wv-result-empty,
-.ps-empty {
+.ps-empty,
+.totp-empty,
+.totp-qr-empty {
   padding: 30px 14px;
   text-align: center;
   font-size: .88rem;
@@ -961,7 +965,9 @@ kbd.hint-key {
 .md-empty strong,
 .kv-empty strong,
 .wv-result-empty strong,
-.ps-empty strong {
+.ps-empty strong,
+.totp-empty strong,
+.totp-qr-empty strong {
   display: block;
   margin-bottom: 5px;
   color: var(--text);
@@ -2802,4 +2808,121 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
   .ps-field { flex-wrap: wrap; }
   .ps-field .input { flex: 1 1 100%; }
   .ps-attacks .value-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
+/* --- 42. TOTP 动态口令（大口令、倒计时条、二维码、otpauth 链接） --------- */
+
+/* 口令是这一页的主角，所以整块放大 —— 它是 <button>（键盘可达、可点复制），
+   不是 <div>。外面那层 <p> 才是 aria-live 区域，口令变化时会被播报。 */
+.totp-code-live { margin: 0 0 14px; }
+
+.totp-code {
+  display: block;
+  width: 100%;
+  padding: 15px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-inset);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 2.6rem;
+  font-weight: 650;
+  letter-spacing: .1em;
+  line-height: 1.15;
+  /* 等宽数字：不然每 30 秒换一次口令，整块数字会左右抖动 */
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.totp-code:hover { border-color: var(--border-strong); }
+.totp-code:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* 没有密钥时退成一句提示的样子，别让 2.6rem 的占位符看着像出了什么故障 */
+.totp-code[data-state="empty"] {
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: .02em;
+  color: var(--text-faint);
+  cursor: default;
+}
+.totp-code[data-state="empty"]:hover { border-color: var(--border); }
+
+/* 倒计时条：宽度按毫秒算，所以过渡时间要短，否则会追不上真实进度。
+   常态用绿色而不是 --hub-accent —— 安全分类的主题色**本身就是红色**，
+   拿它当常态色的话，「快过期」的红色警告跟正常状态长得一模一样，
+   这两档颜色就白设了。绿 → 琥珀 → 红的三档递进一眼就能看懂。 */
+.totp-countdown {
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  overflow: hidden;
+}
+.totp-countdown > i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ok);
+  transition: width 180ms linear;
+}
+.totp-countdown > i[data-state="low"] { background: var(--warn); }
+.totp-countdown > i[data-state="crit"] { background: var(--danger); }
+
+.totp-remaining {
+  margin: 9px 0 0;
+  font-size: .82rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 拆解表的标签是「HMAC 输入」「算法 / 密钥」这类中文短语，58px 装不下 */
+.totp-parts .value-row { grid-template-columns: 112px minmax(0, 1fr); }
+.totp-parts .value-text { font-variant-numeric: tabular-nums; }
+
+/* 二维码固定深模块 + 白底，外面套一层浅底卡片，深色主题下才不显得突兀 */
+.totp-qr {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.totp-qr svg { display: block; width: 100%; max-width: 200px; height: auto; }
+/* 占位文案自己带 30px 的上下内边距，在外面再套一层 12px 就太胖了 */
+.totp-qr .totp-qr-empty { width: 100%; padding: 22px 14px; }
+
+/* otpauth 链接：长串必须能折行（默认的 overflow-wrap 会把整行顶出去），
+   用 anywhere 而不是 break-all —— 后者会把 URL 从任意位置断开，更难读 */
+.totp-uri {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: .78rem;
+  line-height: 1.7;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.totp-uri:hover:not(:disabled) { border-color: var(--border-strong); }
+.totp-uri:disabled { color: var(--text-faint); cursor: default; }
+.totp-uri[data-copied="true"] {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
+  background: var(--ok-soft);
+}
+
+@media (max-width: 560px) {
+  .totp-code { font-size: 2rem; letter-spacing: .07em; padding: 13px 8px; }
+  .totp-parts .value-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }

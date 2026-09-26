@@ -59,7 +59,8 @@ export default async function run() {
   /* 反过来也查一下：测试套件不能指向不存在的工具。
      下面这几个是「共用模块 / 全站」的套件，本来就不对应某个工具，
      但每个都得有 js/<name>.js 这个模块文件（site.mjs 除外，它测的是全站）。 */
-  const SHARED_SUITES = ['site', 'color-utils', 'random-utils', 'password-utils'];
+  const SHARED_SUITES = ['site', 'color-utils', 'random-utils', 'password-utils',
+    'hash-utils', 'qr-utils'];
   const orphanTests = testFiles.filter(
     (f) => !SHARED_SUITES.includes(f) && !T.tools.some((t) => t.slug === f)
   );
