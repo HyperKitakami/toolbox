@@ -43,7 +43,7 @@ tools-box/
 │   ├── color-utils.js         颜色换算、对比度与混合模式（颜色类工具共用）
 │   ├── random-utils.js        随机取样与字符集（生成器类工具共用）
 │   ├── password-utils.js      爆破时间、强度分档与强度估算（两个密码工具共用）
-│   ├── hash-utils.js          SHA-1/256/512、HMAC、Base32（安全类共用）
+│   ├── hash-utils.js          MD5/SHA-1/256/384/512、HMAC、Base32（安全类共用）
 │   ├── qr-utils.js            二维码的模块矩阵 → SVG / canvas 几何（两个工具共用）
 │   ├── lorem-corpus.js        占位文本语料（拉丁 + 中文）
 │   ├── mock-data-corpus.js    测试数据语料（姓氏、地名、公司词…）
@@ -78,6 +78,7 @@ tools-box/
 │       ├── base64.js          Base64 编解码（移植）
 │       ├── password-strength.js 密码强度检测（自研）
 │       ├── totp-generator.js  TOTP 动态口令（移植）
+│       ├── hash-generator.js  哈希摘要生成（移植）
 │       ├── kcwiki-voiceline.js KCWiki 语音台词（自研）
 │       └── whisper-verifier.js 日语语音校对（自研）
 ├── hubs/<id>/index.html       七个分类页（由脚本生成，不要手改）
@@ -97,7 +98,7 @@ tools-box/
 | 分类 | 已上线 | 规划中 | 已挂起 |
 |---|---|---|---|
 | 开发者 | JSON 格式化、CSV 查看器、Markdown 预览、Markdown 转 HTML、文本差异对比、正则表达式测试 | 0 | 5 |
-| 安全 | Base64 编解码、JWT 解码、密码强度检测、TOTP 动态口令 | 4 | 0 |
+| 安全 | Base64 编解码、JWT 解码、密码强度检测、TOTP 动态口令、哈希摘要生成 | 3 | 0 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
@@ -144,6 +145,7 @@ tools-box/
 | 文本大小写转换 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `text-case` | MIT |
 | Base64 编解码 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `base64` | MIT |
 | TOTP 动态口令 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `totp-generator` | MIT |
+| 哈希摘要生成 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `hash-generator` | MIT |
 | 文本差异对比 | 自研 | — |
 | 字数统计 | 自研 | — |
 | 随机字符串 | 自研 | — |
@@ -256,7 +258,7 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 [Iris Digital](https://irisdigital.tech/) 构建并维护的隐私优先工具集，
 同样以 MIT 许可开源。本项目的整体形态（纯静态、零依赖、100% 客户端运行、
 一个工具一个目录加一个脚本）直接参考了它的做法，
-目前有十九个工具是基于它移植而来：
+目前有二十个工具是基于它移植而来：
 
 - **正则表达式测试** ← `regex-tester`：沿用其模式解释算法、界面结构与交互流程
 - **JSON 格式化** ← `json-formatter`：沿用其格式化 / 压缩 / 校验的功能划分与粘贴即格式化
@@ -290,8 +292,11 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 - **TOTP 动态口令** ← `totp-generator`：沿用其 Base32 密钥 + 6/8 位 / 30、60 秒 /
   SHA-1 三组选项、实时倒计时、otpauth 链接与二维码的整套流程，
   并把 `crypto.subtle` 不可用时的降级路径补上、把二维码从 canvas 换成 SVG
+- **哈希摘要生成** ← `hash-generator`：沿用其文本 + 文件两种输入、五种算法一次全算、
+  hex / Base64 两种输出与「粘贴期望摘要反查算法」的比对框，
+  并补上 SHA-384、把 MD5 的字节口径修正、给大文件加上限与替代方案
 
-十九者都做了中文化、设计系统统一，并修复了上游缺陷 ——
+二十者都做了中文化、设计系统统一，并修复了上游缺陷 ——
 正则工具修掉了空匹配死循环与分享链接 base64 填充导致的参数丢失；
 JSON 工具重写了语法高亮（上游因为「先转义再匹配」导致键名与字符串值完全不着色）；
 Markdown 工具移除了 Prism 依赖，改用内置的轻量 HTML 着色；
@@ -333,7 +338,12 @@ Base32 解码过宽（`AB`、`ABC` 这类残留位非零或长度不合法、抄
 会被解成一个「看起来正常」的密钥，于是口令永远对不上却没有任何提示）、
 不检查密钥长度（RFC 4226 §4 R6 要求至少 128 位）、异步算口令没有防竞态
 （改选项时先发的 Promise 可能后到、把过期的口令盖上去），以及 otpauth 链接的编码
-（上游把账号与发行方里的「:」直接删掉 —— 那是静默改用户的输入）。
+（上游把账号与发行方里的「:」直接删掉 —— 那是静默改用户的输入）；
+哈希摘要生成修掉了非 ASCII 文本的 MD5 算错（上游把 JS 字符串的 UTF-16 码元直接
+按字节塞进 32 位字，而 SHA 走 UTF-8 —— 于是**同一个字符串粘进文本框和存成文件
+拖进来，MD5 不一样**）、`crypto.subtle` 不可用时四个 SHA 静默空白、
+MD5 与 SHA-1 已破却只字不提、异步结果没有防竞态、复制没有回退，
+并给大文件补上 128 MB 上限与替代方案（WebCrypto 的摘要没有流式接口）。
 
 **库与数据的作者们**：[marked](https://github.com/markedjs/marked)（MarkedJS、Christopher Jeffrey）、
 [DOMPurify](https://github.com/cure53/DOMPurify)（Cure53），以及

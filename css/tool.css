@@ -2926,3 +2926,87 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
   .totp-code { font-size: 2rem; letter-spacing: .07em; padding: 13px 8px; }
   .totp-parts .value-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
+
+/* --- 43. 哈希摘要生成（摘要行、警告胶囊、来源说明） --------------------- */
+
+/* 「正在算的是哪一个」那一行。放在摘要面板顶部 —— 两个输入面板都能填，
+   这行必须紧挨着结果，否则用户看不出结果对应的是谁。
+   覆盖 .tool-status 的 margin-top:12px（它在面板顶部，上方不需要留白） */
+.hash-source {
+  margin: 0 0 12px;
+  min-height: 1.5em;
+}
+
+.hash-format { margin-bottom: 14px; }
+.hash-format .toolbar-label { font-size: .78rem; }
+
+.hash-list { display: grid; gap: 10px; }
+
+.hash-row {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+
+.hash-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hash-name {
+  font-family: var(--font-mono);
+  font-size: .82rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.hash-meta {
+  font-size: .74rem;
+  color: var(--text-faint);
+}
+
+/* 「已破」胶囊。用 --warn 而不是 --danger：这个算法照样能用（当校验和），
+   不是错误状态，只是「用错地方就出事」，所以是提醒的语气不是报错的语气。 */
+.hash-warn {
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: .7rem;
+  font-weight: 650;
+  cursor: help;
+}
+
+/* 复制按钮推到行尾 */
+.hash-head .btn { margin-left: auto; }
+
+.hash-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  line-height: 1.7;
+  color: var(--text);
+  /* 十六进制串没有任何断点，不写这条会把面板顶宽 */
+  overflow-wrap: anywhere;
+}
+
+/* 没有内容时不给空盒子：留一个浅色破折号，行本身仍然展示算法与长度信息 */
+.hash-row[data-state="empty"] .hash-value::after {
+  content: '—';
+  color: var(--text-faint);
+}
+.hash-row[data-state="unavailable"] .hash-value {
+  font-family: var(--font-sans);
+  font-size: .8rem;
+  color: var(--text-faint);
+}
+
+@media (max-width: 560px) {
+  /* 窄屏把「位数」那行小字折到第二行 —— 名字 + 警告胶囊 + 复制按钮先排一行 */
+  .hash-head { flex-wrap: wrap; row-gap: 4px; }
+  .hash-meta { flex: 1 1 100%; order: 3; margin-top: -2px; }
+  .hash-value { font-size: .74rem; }
+}

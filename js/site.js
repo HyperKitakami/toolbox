@@ -595,6 +595,33 @@
       '<strong>' + esc(title) + '</strong>' + esc(desc) + '</div>';
   }
 
+  /**
+   * 往 `.tool-status` 那一行里写状态，带语义色。
+   *
+   * **语义色的类必须挂在子 `<span>` 上** —— `css/tool.css` 里写的是
+   * `.tool-status .is-error` 这个**后代**选择器，写成
+   * `el.className = 'tool-status is-error'`（同一个元素）一点都吃不到：
+   * 文案还是灰的、加粗也没有，而 `classList.contains('is-error')` 的断言
+   * 照样是绿的，只有看截图才发现。
+   *
+   * 用建节点而不是 innerHTML：状态文案里经常带用户输入的片段
+   * （「第 16 个字符」「命中了 xxx」），拼 HTML 就是一个口子。
+   *
+   * @param {Element} el    `.tool-status` 容器
+   * @param {string} level  '' | 'ok' | 'error' | 'warn'
+   * @param {string} text   文案；空串表示清空
+   */
+  function setStatus(el, level, text) {
+    if (!el) return;
+    el.textContent = '';
+    if (!text) return;
+    if (!level) { el.textContent = text; return; }
+    var span = document.createElement('span');
+    span.className = 'is-' + level;
+    span.textContent = text;
+    el.appendChild(span);
+  }
+
   /* --- 11. 阅读时长估算（字数统计 / Markdown 预览共用） ------------------ */
 
   /* 中日韩统一表意文字 + 扩展A + 兼容表意文字 + 日文假名 + 韩文谚文 */
@@ -706,6 +733,7 @@
     renderCode: renderCode,
     highlightJson: highlightJson,
     emptyHint: emptyHint,
+    setStatus: setStatus,
     readingMinutes: readingMinutes,
     formatDuration: formatDuration,
     readInt: readInt,

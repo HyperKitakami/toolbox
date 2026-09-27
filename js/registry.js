@@ -183,8 +183,8 @@
       ['base64', '编码', '解码', 'urlsafe', 'dataurl'], 'ready', 94],
 
     ['hash-generator', '哈希摘要生成', 'security',
-      '计算 MD5、SHA-1、SHA-256、SHA-512 摘要，可同时输出多种算法结果。',
-      ['hash', 'sha256', 'md5', '摘要'], 'planned', 86],
+      '一次算出 MD5、SHA-1、SHA-256、SHA-384、SHA-512 五种摘要，十六进制或 Base64 输出；文本按 UTF-8 编码，也可以直接拖一个文件进来算校验和。可粘贴一个期望的摘要反查是哪种算法（含长度推断）。本地计算，输入不上传。',
+      ['hash', 'md5', 'sha256', 'sha512', '摘要', '校验和'], 'ready', 86],
 
     ['jwt-decoder', 'JWT 解码', 'security',
       '拆开 JWT 的头部、载荷与签名三段：载荷按 JSON 着色展开，exp / nbf / iat 换算成本机时区的时间与剩余时长，并标出 alg=none、crit、jku 这类要留神的头字段；签名只展示不校验。',

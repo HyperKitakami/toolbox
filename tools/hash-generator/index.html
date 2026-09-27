@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哈希摘要生成 · 工具箱</title>
+<meta name="description" content="一次算出 MD5、SHA-1、SHA-256、SHA-384、SHA-512 五种摘要，十六进制或 Base64 输出；文本按 UTF-8 编码，也可以直接拖一个文件进来算校验和。可粘贴期望的摘要反查是哪种算法。全部在本机计算，输入不上传。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css?v=dee542d6">
+<link rel="stylesheet" href="../../css/site.css?v=da4b5ba1">
+<link rel="stylesheet" href="../../css/tool.css?v=4ed25f0a">
+<script src="../../js/theme-init.js?v=f8313ac9"></script>
+</head>
+<body data-tool="hash-generator" data-hub="security">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../hubs/ai/">AI 辅助</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/security/">安全</a>
+      <span class="sep">/</span>
+      <span aria-current="page">哈希摘要生成</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>哈希摘要生成</h1>
+        <p class="lead">
+          同一份内容，五种摘要一次算完：MD5、SHA-1、SHA-256、SHA-384、SHA-512。
+          输入的文本按 <strong>UTF-8</strong> 编码成字节再算 —— 和
+          <code class="mono">sha256sum</code>、Git、OpenSSL 的默认口径一致；
+          也可以直接拖一个文件进来算校验和。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge badge--warn">输入不上传 · 不保存</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <!-- 依赖没加载上时在这里说明（脚本里的 bail） -->
+      <div class="notice notice--warn" id="hg-error" hidden></div>
+
+      <div class="notice notice--warn">
+        <p>
+          <strong>哈希不是加密。</strong>摘要是单向的 —— 从摘要推不回原文，
+          所以这个页面只是把内容压成一串指纹，不保存内容本身：不发网络请求、不写
+          <code class="mono">localStorage</code>、不进 URL。这个页面
+          <strong>没有</strong>草稿功能，是有意不做的，刷新即清空。
+          另外提醒一句：文本框里的内容是<strong>明文显示</strong>的（不然没法核对你要算的是什么），
+          所以如果你打算算的是一段口令，先确认这台机器是你自己的。
+        </p>
+      </div>
+
+      <div class="tool-body">
+
+        <!-- 1. 文本输入 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">文本</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="hg-clear">清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <textarea class="textarea" id="hg-input" rows="9" spellcheck="false"
+                      autocomplete="off" autocapitalize="off"
+                      placeholder="在这里输入或粘贴内容，摘要会实时出现…"></textarea>
+          </div>
+          <div class="panel-foot">
+            <span>按 UTF-8 编码成字节再算 —— 跟 <code class="mono">printf %s 内容 | sha256sum</code> 是同一个结果</span>
+          </div>
+        </section>
+
+        <!-- 2. 文件输入 -->
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">文件</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" id="hg-file-remove" hidden>移除文件</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="drop-zone" id="hg-drop" role="button" tabindex="0"
+                 aria-label="选择或拖放要算摘要的文件">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+              </svg>
+              <p><strong>拖放文件到这里</strong>，或点击选择文件</p>
+              <p class="hint">按原始字节算，不经过任何编码转换</p>
+            </div>
+            <input type="file" id="hg-file" class="sr-only">
+            <p class="tool-status" id="hg-file-info" hidden></p>
+          </div>
+          <div class="panel-foot">
+            <span>上限 128 MB —— 浏览器的摘要接口没有流式更新，必须整个读进内存（见下方说明）</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 3. 摘要 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">摘要</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm" type="button" id="hg-copy-all">复制全部</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <p class="tool-status hash-source" id="hg-source-note"></p>
+          <div class="toolbar hash-format">
+            <span class="toolbar-label" id="hg-format-label">输出格式</span>
+            <div class="choice-row" id="hg-format" role="group" aria-labelledby="hg-format-label"></div>
+          </div>
+          <div class="hash-list" id="hg-rows"></div>
+        </div>
+        <div class="panel-foot">
+          <span class="tool-status" id="hg-status"></span>
+        </div>
+      </section>
+
+      <!-- 4. 比对 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">比对</span>
+        </div>
+        <div class="panel-body">
+          <label class="field-label" for="hg-compare">
+            粘贴一个期望的摘要 <span class="faint">十六进制或 Base64 都认，也能认 sha256sum 的整行输出</span>
+          </label>
+          <input class="input input--mono" id="hg-compare" type="text"
+                 autocomplete="off" autocapitalize="off" spellcheck="false"
+                 placeholder="例如 900150983cd24fb0d6963f7d28e17f72">
+          <p class="tool-status" id="hg-compare-out"></p>
+        </div>
+        <div class="panel-foot">
+          <span>一致只说明「内容相同」；要证「没被人换过」，得用没有被碰撞攻击的算法</span>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>哈希是什么，不是什么</h3>
+        <ul>
+          <li>把任意长度的字节压成固定长度的一串（摘要）。同样的输入永远得到同样的摘要，
+            输入改一个比特，输出就面目全非。</li>
+          <li><strong>它是单向的</strong>：从摘要推不回原文，这是刻意设计的。所以它
+            <strong>不是加密</strong> —— 加密可以解密，哈希不可以。别拿它当「加密」用。</li>
+          <li>它回答的是「这两份内容是不是同一份」。当内容从你眼前经过时，
+            它能查出<strong>传输过程中有没有损坏</strong>；但能不能查出
+            <strong>被人故意换掉</strong>，取决于这个算法有没有被攻破 —— 见下一条。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>MD5 与 SHA-1 已经不能用于签名</h3>
+        <ul>
+          <li>RFC 6151 的原文：<em>MD5 is no longer acceptable where collision resistance
+            is required such as digital signatures. It is not urgent to stop using MD5 in
+            other ways…</em> —— 意思是：<strong>需要「抗碰撞」的地方（数字签名、证书、
+            防篡改）不能用 MD5；只是拿来比对内容有没有变（校验和），不着急停用。</strong></li>
+          <li>SHA-1 同理。RFC 6194 记着 NIST 从 2010 年起就建议不要再用 SHA-1 生成数字签名，
+            而碰撞的成本一路在降：2005 年找到完整 80 轮的碰撞需要 2<sup>69</sup> 次运算，
+            2017 年 Google 与 CWI 造出了两份内容不同、SHA-1 却完全相同的 PDF
+            （就是 SHAttered）。</li>
+          <li>所以这个页面给 MD5 与 SHA-1 都标了「已破 · 别用于签名」。
+            <strong>拿来跟官网公布的校验和比对（防下载损坏）仍然可以；
+            拿它证明「这份文件没被人换掉」则是错的</strong> —— 攻击者可以造出两份摘要相同的文件，
+            让你核对通过、却装上了另一份内容。</li>
+          <li>要抗碰撞，用 SHA-256 或更强。这也是为什么现在的软件下载页基本都只给 SHA-256。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>摘要算的是字节，不是字符</h3>
+        <ul>
+          <li>同一段文本换个编码就是另一串字节、另一个摘要。这个页面统一用
+            <strong>UTF-8</strong> —— 和 <code class="mono">sha256sum</code>、
+            Git、OpenSSL 的默认口径一致，所以结果拿去跟命令行对照能对上。</li>
+          <li>换个编码就换一个结果：把「中文」用 GBK 存成文件再拖进来，摘要当然不一样。
+            这不是工具算错了，是输入本来就不是同一串字节。</li>
+          <li>顺带说一件上游实现真错了的地方：原来的版本里，MD5 吃的是 JS 字符串的
+            UTF-16 码元、而 SHA 系列走 UTF-8，两套字节 ——
+            于是<strong>同一个字符串粘进文本框和存成文件拖进来，MD5 不一样</strong>。
+            现在所有算法都只吃字节，文本统一走 UTF-8。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>十六进制还是 Base64</h3>
+        <ul>
+          <li><strong>十六进制</strong>（小写）是 <code class="mono">sha256sum</code> /
+            <code class="mono">certutil -hashfile</code> 的输出格式，
+            也是技术文档里最常见的写法。</li>
+          <li><strong>Base64</strong> 更短，而且是<strong>子资源完整性</strong>
+            （Subresource Integrity）要求的写法：<code class="mono">&lt;script
+            integrity="sha384-…"&gt;</code> 里那一串就是 SHA-384 的 Base64。
+            给 CDN 资源写 integrity 时选这个。</li>
+          <li>比对框两种格式都认，也可以互相比：当前显示 Base64、你粘十六进制进来，照样能对上。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>文件为什么有 128 MB 的上限</h3>
+        <ul>
+          <li>浏览器的 <code class="mono">crypto.subtle.digest</code> 是<strong>一次性</strong>接口：
+            没有「喂一段、再喂一段」的流式更新（WebCrypto 至今没提供），
+            所以必须先把整个文件读进内存。读 500 MB 就占 500 MB，
+            还可能让页面卡住甚至崩掉。</li>
+          <li>纯 JS 那条回落路径同样是整块算的，所以这个限制与走哪条实现无关。</li>
+          <li>更大的文件请用系统自带的工具：Linux / macOS 用
+            <code class="mono">sha256sum 文件名</code>，Windows 用
+            <code class="mono">certutil -hashfile 文件名 SHA256</code>。
+            这两个都是流式的，几个 GB 也不占内存。</li>
+          <li>文件内容的摘要按<strong>原始字节</strong>算，不经过 UTF-8 那一步 ——
+            编码只作用于文本框里的内容。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>和「TOTP 动态口令」「Base64 编解码」的分工</h3>
+        <ul>
+          <li>三个工具共用同一份密码学实现（<code class="mono">js/hash-utils.js</code>，
+            即 <code class="mono">T.hash</code>）：摘要、HMAC、Base32 都在那里。
+            所以这里的 SHA-1 与 <a href="../totp-generator/">TOTP</a> 用的 SHA-1
+            是同一次实现，不会出现「两边算出来不一样」。</li>
+          <li>要算 HMAC（带密钥的摘要）等 <code class="mono">hmac-generator</code>，
+            要编码字节去 <a href="../base64/">Base64 编解码</a>。</li>
+          <li>MD5 没有浏览器原生实现（WebCrypto 有意不实现它），所以这一行永远走纯 JS；
+            SHA 系列在安全上下文里走浏览器原生实现。底栏会写明当前用的是哪条路。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <ul>
+          <li>算法按 RFC 1321（MD5）、FIPS 180-4 / RFC 6234（SHA 系列）实现，
+            官方向量与 OpenSSL 逐条比对过。</li>
+          <li>界面与交互移植自 <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+            的 <code class="mono">hash-generator</code>（MIT，作者 Jamal Tantaoui / Iris Digital），
+            已中文化、统一到本站设计系统，并修掉了若干缺陷（详见
+            <a href="../../THIRD-PARTY.md">THIRD-PARTY.md</a>）。</li>
+          <li>MD5/SHA-1 的当下定位引 RFC 6151 与 RFC 6194 的原文，两份都是 IETF 的信息性文档。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。除「AI 辅助」分类会调用外部模型外，
+          其余工具都在浏览器本地运行，不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+          <li><a href="../../hubs/ai/">AI 辅助</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js?v=49c090c8" defer></script>
+<script src="../../js/hash-utils.js?v=8d1742c7" defer></script>
+<script src="../../js/site.js?v=460fbaea" defer></script>
+<script src="../../js/tools/hash-generator.js?v=a68cd4e1" defer></script>
+</body>
+</html>

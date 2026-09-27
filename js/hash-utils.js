@@ -10,19 +10,24 @@
    实测 jsdom 30 有 `crypto.getRandomValues`，**没有** `crypto.subtle`。
    所以这里**优先用平台实现，拿不到就回落到纯 JS**，并如实告诉用户走的是哪条路。
 
-   纯 JS 那部分不是「大致能算」：`scripts/tests/hash-utils.mjs` 把 SHA-1 /
-   SHA-256 / SHA-512 / HMAC 逐个与 **Node 的 `crypto`（OpenSSL）** 交叉比对，
-   覆盖空串、分组边界（55/56/63/64/65/119/120/127/128/129 字节）、
-   多字节 UTF-8、以及密钥长于分组（HMAC 要先摘要一次）这些分支。
+   纯 JS 那部分不是「大致能算」：`scripts/tests/hash-utils.mjs` 把 MD5 / SHA-1 /
+   SHA-256 / SHA-384 / SHA-512 / HMAC 逐个与 **Node 的 `crypto`（OpenSSL）** 交叉比对，
+   覆盖空串、分组边界（MD5/SHA 系列的 55/56/63/64/65、119～129 字节）、
+   多字节 UTF-8、代理对、全 0x00 / 全 0xff、以及密钥长于分组（HMAC 要先摘要一次）
+   这些分支。**多字节 UTF-8 那几条是特意留的**：上游的 hash-generator 就是在这里出错的
+   （它的 MD5 吃的是 JS 字符串的 UTF-16 码元、而 SHA 走 TextEncoder 的 UTF-8，
+   于是同一个字符串「当文本算」与「当文件算」给出两个不同的 MD5）。
 
    API（window.TOOLBOX.hash）：
      utf8Bytes(str) / hex(bytes) / fromHex(str) / toBase64(bytes) / fromBase64(str)
      equal(a, b)                 定长比较，不提前返回（比时间不泄漏前缀匹配长度）
      base32Encode(bytes) / base32Decode(str)
-     sha1(bytes) / sha256(bytes) / sha512(bytes)        纯 JS，同步
+     md5(bytes) / sha1(bytes) / sha256(bytes) / sha384(bytes) / sha512(bytes)   纯 JS，同步
      hmac(name, keyBytes, msgBytes)                      纯 JS，同步
-     ALGOS                        { SHA1/SHA256/SHA512: { name, block, bytes } }
+     ALGOS                        { MD5/SHA1/SHA256/SHA384/SHA512:
+                                    { name, block, bytes, native, bigint } }
      hasSubtle() / impl()        'native' | 'pure'
+     nativeImpl(name)            平台认不认这个算法（MD5 永远 false）
      digestAsync(name, bytes) -> Promise|null
      hmacAsync(name, keyBytes, msgBytes) -> Promise|null
      canUse(name)                当前环境能不能算这个算法
@@ -31,14 +36,22 @@
    1. **只认 `window.crypto.subtle`，不认裸 `crypto`。** 模块可能被注入到一个
       假的 window 里（测试就是这么加载它的），这时应当老老实实走纯 JS 路径，
       而不是摸到宿主环境的实现 —— 否则「降级路径」永远测不到。
-   2. **`ALGOS` 的键是不带连字符的 `SHA1`/`SHA256`/`SHA512`**，与 otpauth URI
-      里的写法一致；带连字符的名字用 `byName()` 认。
-   3. **`base32Decode` 严格校验**，不接受「残留位非零」和非法分组长度。
-      宽松实现（上游就是这样）会把打错的密钥解成一个**看起来正常**的密钥，
+   2. **`ALGOS` 的键不带连字符**（`SHA1`/`SHA256`/`SHA384`/`SHA512`），
+      与 otpauth URI 里的写法一致；带连字符的名字用 `byName()` 认。
+       MD5 的键就是 `MD5`。
+   3. **MD5 的 `native` 是 false**：WebCrypto 有意不实现 MD5，所以它永远走纯 JS。
+      `digestAsync` / `hmacAsync` 遇到平台不认的算法**返回 null 而不是让
+      NotSupportedError 顺着 Promise 链穿出去** —— 那种失败看起来与输入无关，
+      极难定位。
+   4. **SHA-384 与 SHA-512 共用 `sha512Core`**：只差初始向量与截断长度。
+      按「只差一个常量表」抄第二遍，迟早会在轮数或移位量上分叉。
+   5. **`base32Decode` 严格校验**，不接受「残留位非零」和非法分组长度。
+      宽松实现会把打错的密钥解成一个**看起来正常**的密钥，
       于是口令永远对不上、还没有任何提示。宁可当场拒绝。
-   4. **SHA-512 用 BigInt** 实现 64 位字。没有 BigInt 时（2018 年前的引擎）
-      返回 null 而不是算错 —— 调用方用 `canUse('SHA-512')` 提前问。
-      常量用**惰性初始化**，避免在缺少 BigInt 的环境里连累 SHA-1/SHA-256。
+   6. **SHA-384/512 用 BigInt** 实现 64 位字，常量**惰性初始化**：
+      把 `BigInt('0x…')` 写在模块顶层的话，缺少 BigInt 的引擎会在加载期抛错，
+      把 MD5/SHA-1/SHA-256 一起带下水。缺 BigInt 时返回 null 而不是算错 ——
+      调用方用 `canUse()` 提前问。
    ========================================================================== */
 (function () {
   'use strict';
@@ -241,7 +254,7 @@
     return { bytes: new Uint8Array(bytes), error: null, bits: bytes.length * 8 };
   }
 
-  /* --- 3. SHA-1 / SHA-256 / SHA-512（纯 JS） ----------------------------- */
+  /* --- 3. MD5 / SHA-1 / SHA-256 / SHA-384 / SHA-512（纯 JS） ------------- */
 
   function readU32(b, i) {
     return ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0;
@@ -252,6 +265,20 @@
     b[i + 1] = (v >>> 16) & 0xff;
     b[i + 2] = (v >>> 8) & 0xff;
     b[i + 3] = v & 0xff;
+  }
+
+  /* MD5 是**小端**的：读字、写字、以及末尾的位长度都与 SHA 系列相反。
+     两套各留一份，别想着合并成一个带字节序参数的函数 —— 那个参数
+     在调用点上永远看不出来是哪个。 */
+  function readU32LE(b, i) {
+    return (b[i] | (b[i + 1] << 8) | (b[i + 2] << 16) | (b[i + 3] << 24)) >>> 0;
+  }
+
+  function writeU32LE(b, i, v) {
+    b[i] = v & 0xff;
+    b[i + 1] = (v >>> 8) & 0xff;
+    b[i + 2] = (v >>> 16) & 0xff;
+    b[i + 3] = (v >>> 24) & 0xff;
   }
 
   function rotr(v, n) { return ((v >>> n) | (v << (32 - n))) >>> 0; }
@@ -372,6 +399,83 @@
     return out;
   }
 
+  /* --- MD5：128 位，小端（RFC 1321） ------------------------------------- */
+
+  /**
+   * 填充：补 0x80、补 0 到分组边界前 lenBytes 字节、末尾放**小端**位长度。
+   * 与 SHA 的 `padded()` 只差字节序 —— 但也正因为只差这一点，
+   * 复用同一个函数时极易漏掉，所以这里各写一份、各自点名。
+   */
+  function paddedLE(bytes, block, lenBytes) {
+    var len = bytes.length;
+    var rem = (len + 1 + lenBytes) % block;
+    var k = rem === 0 ? 0 : block - rem;
+    var out = new Uint8Array(len + 1 + k + lenBytes);
+    out.set(bytes, 0);
+    out[len] = 0x80;
+
+    var bits = len * 8;
+    var p = out.length - lenBytes;
+    writeU32LE(out, p, bits >>> 0);                                  /* 低位在前 */
+    if (lenBytes >= 8) writeU32LE(out, p + 4, Math.floor(bits / 4294967296) >>> 0);
+    return out;
+  }
+
+  /* 常量 = floor(2^32 × |sin(i + 1)|)，i = 0…63 —— 这就是 RFC 1321 §3.4 给的
+     定义式，所以直接按公式算，而不是手抄 64 个魔数（手抄 64 个 8 位十六进制
+     数，错一个都要靠交叉校验才发现）。惰性构造，且结果由测试对 OpenSSL 校验。 */
+  var MD5_K = null;
+
+  var MD5_S = [
+    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+    5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
+    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
+    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21
+  ];
+
+  function md5Constants() {
+    if (MD5_K) return MD5_K;
+    var k = new Uint32Array(64);
+    for (var i = 0; i < 64; i++) {
+      k[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) >>> 0;
+    }
+    MD5_K = k;
+    return k;
+  }
+
+  function md5(bytes) {
+    var K = md5Constants();
+    var H = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476];
+    var d = paddedLE(bytes, 64, 8);
+    var M = new Uint32Array(16);
+    var i, t;
+
+    for (i = 0; i < d.length; i += 64) {
+      for (t = 0; t < 16; t++) M[t] = readU32LE(d, i + t * 4);
+
+      var a = H[0], b = H[1], c = H[2], dd = H[3];
+      for (t = 0; t < 64; t++) {
+        var F, g;
+        if (t < 16) { F = (b & c) | (~b & dd); g = t; }
+        else if (t < 32) { F = (dd & b) | (~dd & c); g = (5 * t + 1) % 16; }
+        else if (t < 48) { F = b ^ c ^ dd; g = (3 * t + 5) % 16; }
+        else { F = c ^ (b | ~dd); g = (7 * t) % 16; }
+
+        F = ((F >>> 0) + a + K[t] + M[g]) >>> 0;
+        a = dd; dd = c; c = b;
+        b = (b + rotl(F, MD5_S[t])) >>> 0;
+      }
+      H[0] = (H[0] + a) >>> 0;
+      H[1] = (H[1] + b) >>> 0;
+      H[2] = (H[2] + c) >>> 0;
+      H[3] = (H[3] + dd) >>> 0;
+    }
+
+    var out = new Uint8Array(16);
+    for (i = 0; i < 4; i++) writeU32LE(out, i * 4, H[i]);
+    return out;
+  }
+
   /* --- SHA-512：64 位字，用 BigInt --------------------------------------- */
 
   var HAS_BIGINT = typeof BigInt === 'function';
@@ -380,6 +484,7 @@
      ReferenceError，不能让它连累 SHA-1 与 SHA-256 的加载。 */
   var K512 = null;
   var H512_INIT = null;
+  var H384_INIT = null;
 
   function init512() {
     if (K512) return true;
@@ -409,8 +514,14 @@
     var hs = ['6a09e667f3bcc908', 'bb67ae8584caa73b', '3c6ef372fe94f82b', 'a54ff53a5f1d36f1',
       '510e527fade682d1', '9b05688c2b3e6c1f', '1f83d9abfb41bd6b', '5be0cd19137e2179'];
 
+    /* SHA-384 与 SHA-512 是同一个核心：只是初始向量取**第 9～16 个素数**
+       平方根的小数部分，并把输出截到前 48 字节（FIPS 180-4 §5.3.4）。 */
+    var h384 = ['cbbb9d5dc1059ed8', '629a292a367cd507', '9159015a3070dd17', '152fecd8f70e5939',
+      '67332667ffc00b31', '8eb44a8768581511', 'db0c2e0d64f98fa7', '47b5481dbefa4fa4'];
+
     K512 = ks.map(function (s) { return BigInt('0x' + s); });
     H512_INIT = hs.map(function (s) { return BigInt('0x' + s); });
+    H384_INIT = h384.map(function (s) { return BigInt('0x' + s); });
     return true;
   }
 
@@ -434,12 +545,22 @@
     }
   }
 
-  /** @returns {Uint8Array|null} BigInt 不可用时返回 null */
-  function sha512(bytes) {
+  /**
+   * SHA-512 的核心：64 位字、80 轮、分组 128 字节。SHA-384 只是换一组初始向量
+   * 再把结果截短，所以两者共用这一份 —— 按「只差一个常量表」抄第二遍，
+   * 迟早会在轮数或移位量上分叉。
+   *
+   * 传的是**变体名**而不是初始向量本身：那两张表是在 `init512()` 里才填充的，
+   * 而函数参数在调用前就求值 —— 传 `H384_INIT` 进来会拿到 `null`（首次调用时）。
+   *
+   * @param {'SHA-384'|'SHA-512'} variant
+   * @returns {Uint8Array|null} 完整的 64 字节状态；BigInt 不可用时 null
+   */
+  function sha512Core(bytes, variant) {
     if (!init512()) return null;
     if (MASK64 === null) MASK64 = BigInt('0xffffffffffffffff');
 
-    var H = H512_INIT.slice();
+    var H = (variant === 'SHA-384' ? H384_INIT : H512_INIT).slice();
     var d = padded(bytes, 128, 16);
     var w = new Array(80);
     var i, t;
@@ -488,12 +609,31 @@
     return out;
   }
 
+  /** @returns {Uint8Array|null} BigInt 不可用时返回 null */
+  function sha512(bytes) { return sha512Core(bytes, 'SHA-512'); }
+
+  /** SHA-384：同一核心 + 第 9～16 个素数的那组初始向量 + 截到 48 字节 */
+  function sha384(bytes) {
+    var full = sha512Core(bytes, 'SHA-384');
+    return full ? full.subarray(0, 48) : null;
+  }
+
   /* --- 4. HMAC（RFC 2104） ----------------------------------------------- */
 
+  /**
+   * `native` 表示「`crypto.subtle` 认得这个算法」。**MD5 是 false** ——
+   * WebCrypto 有意不实现它（这不是遗漏，是标准层面的决定），所以 MD5
+   * 在任何浏览器里都得走纯 JS。有了这个标志，`digestAsync` 才会老老实实
+   * 返回 null 让调用方回落，而不是把一个 NotSupportedError 抛进 Promise 链。
+   *
+   * `bigint` 表示纯 JS 实现依赖 BigInt（SHA-384/512 的 64 位字）。
+   */
   var ALGOS = {
-    SHA1: { name: 'SHA-1', block: 64, bytes: 20, hash: sha1, bigint: false },
-    SHA256: { name: 'SHA-256', block: 64, bytes: 32, hash: sha256, bigint: false },
-    SHA512: { name: 'SHA-512', block: 128, bytes: 64, hash: sha512, bigint: true }
+    MD5:    { name: 'MD5',     block: 64,  bytes: 16, hash: md5,    native: false, bigint: false },
+    SHA1:   { name: 'SHA-1',   block: 64,  bytes: 20, hash: sha1,   native: true,  bigint: false },
+    SHA256: { name: 'SHA-256', block: 64,  bytes: 32, hash: sha256, native: true,  bigint: false },
+    SHA384: { name: 'SHA-384', block: 128, bytes: 48, hash: sha384, native: true,  bigint: true },
+    SHA512: { name: 'SHA-512', block: 128, bytes: 64, hash: sha512, native: true,  bigint: true }
   };
 
   /** 认 'SHA-1' / 'sha1' / 'SHA1' 都行（otpauth URI 里是不带连字符的写法） */
@@ -503,8 +643,8 @@
   }
 
   /**
-   * @param {string} name 'SHA-1' | 'SHA-256' | 'SHA-512'
-   * @returns {Uint8Array|null} 算法不存在或环境不支持（SHA-512 缺 BigInt）时 null
+   * @param {string} name 'MD5' | 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512'
+   * @returns {Uint8Array|null} 算法不存在或环境不支持（SHA-384/512 缺 BigInt）时 null
    */
   function hmac(name, keyBytes, msgBytes) {
     var a = byName(name);
@@ -546,24 +686,38 @@
 
   function impl() { return hasSubtle() ? 'native' : 'pure'; }
 
-  /** 当前环境能不能算这个算法（原生有实现就算能；纯 JS 只有 SHA-512 依赖 BigInt） */
+  /** 平台（`crypto.subtle`）能不能算这个算法 —— MD5 永远不能 */
+  function nativeImpl(name) {
+    var a = byName(name);
+    return !!(a && a.native && hasSubtle());
+  }
+
+  /**
+   * 当前环境能不能算这个算法。三条路取或：
+   * 平台有实现 / 纯 JS 实现存在（且不缺 BigInt）。
+   */
   function canUse(name) {
     var a = byName(name);
     if (!a) return false;
-    if (hasSubtle()) return true;
+    if (nativeImpl(name)) return true;
     return !a.bigint || HAS_BIGINT;
   }
 
+  /**
+   * 平台实现。**平台没有这个算法时返回 null**（MD5 就是这种情况），
+   * 调用方据此回落 `digestAsync` 的同步版本 —— 不要让 subtle 的
+   * NotSupportedError 顺着 Promise 链穿出去，那种失败看起来与输入无关。
+   */
   function digestAsync(name, bytes) {
-    if (!hasSubtle()) return null;
-    return window.crypto.subtle.digest(String(name), bytes)
+    if (!nativeImpl(name)) return null;
+    return window.crypto.subtle.digest(byName(name).name, bytes)
       .then(function (buf) { return new Uint8Array(buf); });
   }
 
   function hmacAsync(name, keyBytes, msgBytes) {
-    if (!hasSubtle()) return null;
+    if (!nativeImpl(name)) return null;
     var s = window.crypto.subtle;
-    return s.importKey('raw', keyBytes, { name: 'HMAC', hash: { name: String(name) } },
+    return s.importKey('raw', keyBytes, { name: 'HMAC', hash: { name: byName(name).name } },
       false, ['sign'])
       .then(function (k) { return s.sign('HMAC', k, msgBytes); })
       .then(function (buf) { return new Uint8Array(buf); });
@@ -581,8 +735,10 @@
     base32Encode: base32Encode,
     base32Decode: base32Decode,
 
+    md5: md5,
     sha1: sha1,
     sha256: sha256,
+    sha384: sha384,
     sha512: sha512,
     hmac: hmac,
 
@@ -591,6 +747,7 @@
     hasBigInt: HAS_BIGINT,
     hasSubtle: hasSubtle,
     impl: impl,
+    nativeImpl: nativeImpl,
     canUse: canUse,
     digestAsync: digestAsync,
     hmacAsync: hmacAsync

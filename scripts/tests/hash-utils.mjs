@@ -68,10 +68,13 @@ export default async function run() {
   push(Buffer.from([0x80]), '单个 0x80（与填充字节同形）');
   push(Buffer.alloc(63, 0x00), '63 个 0x00');
 
+  /* [纯 JS 函数名, Node 的算法名, ALGOS 里的名字] */
   const shas = [
-    ['sha1', 'sha1'],
-    ['sha256', 'sha256'],
-    ['sha512', 'sha512']
+    ['md5', 'md5', 'MD5'],
+    ['sha1', 'sha1', 'SHA-1'],
+    ['sha256', 'sha256', 'SHA-256'],
+    ['sha384', 'sha384', 'SHA-384'],
+    ['sha512', 'sha512', 'SHA-512']
   ];
   for (const [fn, algo] of shas) {
     const bad = [];
@@ -86,8 +89,14 @@ export default async function run() {
       bad.slice(0, 3).join(' / '));
   }
 
-  /* 已知向量单独列出来：它们是最容易被人肉复核的锚点 */
+  /* ---------- 2. 已知向量 ---------- */
   section('2. 公开的已知向量');
+  ok('MD5("abc")', H.hex(H.md5(Buffer.from('abc'))) ===
+    '900150983cd24fb0d6963f7d28e17f72', H.hex(H.md5(Buffer.from('abc'))));
+  ok('MD5("")', H.hex(H.md5(Buffer.from(''))) ===
+    'd41d8cd98f00b204e9800998ecf8427e', H.hex(H.md5(Buffer.from(''))));
+  ok('MD5("message digest")', H.hex(H.md5(Buffer.from('message digest'))) ===
+    'f96b697d7cb7938d525a2f31aaf161d0', H.hex(H.md5(Buffer.from('message digest'))));
   ok('SHA-1("abc")', H.hex(H.sha1(Buffer.from('abc'))) ===
     'a9993e364706816aba3e25717850c26c9cd0d89d', H.hex(H.sha1(Buffer.from('abc'))));
   ok('SHA-1("")', H.hex(H.sha1(Buffer.from(''))) ===
@@ -95,24 +104,58 @@ export default async function run() {
   ok('SHA-256("abc")', H.hex(H.sha256(Buffer.from('abc'))) ===
     'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
     H.hex(H.sha256(Buffer.from('abc'))));
+  ok('SHA-384("abc")', H.hex(H.sha384(Buffer.from('abc'))) ===
+    'cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed' +
+    '8086072ba1e7cc2358baeca134c825a7',
+    H.hex(H.sha384(Buffer.from('abc'))));
   ok('SHA-512("abc")', H.hex(H.sha512(Buffer.from('abc'))) ===
     'ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a' +
     '2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f',
     H.hex(H.sha512(Buffer.from('abc'))));
-  ok('摘要长度分别是 20 / 32 / 64 字节',
+  ok('SHA-384 与 SHA-512 的分组长度相同（共用核心的间接证据）',
+    H.ALGOS.SHA384.block === 128 && H.ALGOS.SHA384.block === H.ALGOS.SHA512.block &&
+    H.ALGOS.SHA384.bytes === 48 && H.ALGOS.SHA512.bytes === 64);
+  /* 顺手钉住一个很容易想歪的地方：SHA-384 **不是** SHA-512 的截断 ——
+     两者的初始向量不同（第 1～8 个素数 vs 第 9～16 个素数平方根的小数部分），
+     所以输出从第 1 个字节起就不一样。它们共用的是**代码**，不是结果。 */
+  ok('SHA-384 不是 SHA-512 的前 48 字节（初始向量不同，输出完全不同）',
+    H.hex(H.sha384(Buffer.from('abc'))) !== H.hex(H.sha512(Buffer.from('abc'))).slice(0, 96));
+  ok('摘要长度分别是 16 / 20 / 32 / 48 / 64 字节',
+    H.md5(Buffer.from('x')).length === 16 &&
     H.sha1(Buffer.from('x')).length === 20 &&
     H.sha256(Buffer.from('x')).length === 32 &&
+    H.sha384(Buffer.from('x')).length === 48 &&
     H.sha512(Buffer.from('x')).length === 64);
   ok('ALGOS 的 block 与摘要长度声明与实际一致',
+    H.ALGOS.MD5.block === 64 && H.ALGOS.MD5.bytes === H.md5(Buffer.from('')).length &&
     H.ALGOS.SHA1.block === 64 && H.ALGOS.SHA1.bytes === H.sha1(Buffer.from('')).length &&
     H.ALGOS.SHA256.block === 64 && H.ALGOS.SHA256.bytes === H.sha256(Buffer.from('')).length &&
+    H.ALGOS.SHA384.block === 128 && H.ALGOS.SHA384.bytes === H.sha384(Buffer.from('')).length &&
     H.ALGOS.SHA512.block === 128 && H.ALGOS.SHA512.bytes === H.sha512(Buffer.from('')).length);
+
+  /* ---------- 2b. 上游在这里出错的那一处 ---------- */
+  section('2b. 多字节 UTF-8：上游的 hash-generator 就栽在这里');
+  /* 上游把 JS 字符串的 UTF-16 码元直接按字节塞进 MD5 的 32 位字里，
+     于是同一个字符串「当文本算」与「当文件算」给出两个不同的 MD5。
+     这里的锚点是：纯 JS 实现吃的是**字节**，所以对同一串字节只有一种结果。 */
+  for (const t of ['中文', '你好，世界', 'café', 'naïve', 'emoji 🎉', '日本語', 'Ω']) {
+    const buf = Buffer.from(t, 'utf8');
+    const viaBytes = Buffer.from(H.md5(buf)).toString('hex');
+    const want = nodeHex('md5', buf);
+    ok('MD5(' + JSON.stringify(t) + ') 与 OpenSSL 一致', viaBytes === want,
+      viaBytes + ' vs ' + want);
+  }
+  ok('utf8Bytes 与 Buffer.from(…, "utf8") 一致（这就是「只有一套字节」的依据）',
+    ['中文', 'emoji 🎉', 'aΩb'].every((t) =>
+      Buffer.from(H.utf8Bytes(t)).equals(Buffer.from(t, 'utf8'))));
+  ok('对照：上游那套写法会得到另一个值（截断 UTF-16 码元）',
+    Buffer.from(H.md5(Buffer.from('中文', 'utf8'))).toString('hex') !==
+    Buffer.from(H.md5(Buffer.from('中文', 'utf16le'))).toString('hex'));
 
   /* ---------- 3. HMAC ---------- */
   section('3. HMAC 与 Node 交叉校验');
   const KEY_LENS = [0, 1, 20, 63, 64, 65, 100, 128, 129, 200];
-  for (const [fn, algo] of shas) {
-    const name = H.ALGOS[fn === 'sha1' ? 'SHA1' : fn === 'sha256' ? 'SHA256' : 'SHA512'].name;
+  for (const [fn, algo, name] of shas) {
     const bad = [];
     for (const n of KEY_LENS) {
       const key = Buffer.alloc(n);
@@ -162,6 +205,9 @@ export default async function run() {
   const nSha = await native.digestAsync('SHA-256', sample);
   ok('digestAsync 与纯 JS 一致', eqBytes(nSha, H.sha256(sample)),
     nSha && Buffer.from(nSha).toString('hex'));
+  ok('digestAsync 对 SHA-384 / SHA-512 也与纯 JS 一致',
+    eqBytes(await native.digestAsync('SHA-384', sample), H.sha384(sample)) &&
+    eqBytes(await native.digestAsync('SHA-512', sample), H.sha512(sample)));
   const nHmac = await native.hmacAsync('SHA-1', Buffer.from('k'), sample);
   ok('hmacAsync 与纯 JS 一致', eqBytes(nHmac, H.hmac('SHA-1', Buffer.from('k'), sample)));
   const nLong = await native.hmacAsync('SHA-512', longKey, sample);
@@ -169,6 +215,21 @@ export default async function run() {
   ok('没有平台实现时 digestAsync 返回 null（而不是抛错或返回错值）',
     H.digestAsync('SHA-256', sample) === null);
   ok('没有平台实现时 hmacAsync 返回 null', H.hmacAsync('SHA-1', new Uint8Array(1), sample) === null);
+
+  /* MD5 是这一节的特殊项：即便平台实现齐全，WebCrypto 也不认 MD5 ——
+     `nativeImpl('MD5')` 必须老实返回 false，`digestAsync` 必须返回 null
+     让调用方回落，而不是把一个 NotSupportedError 抛进 Promise 链。 */
+  ok('平台认得 SHA 系列', native.nativeImpl('SHA-1') && native.nativeImpl('SHA-256') &&
+    native.nativeImpl('SHA-384') && native.nativeImpl('SHA-512'));
+  ok('平台**不认** MD5（WebCrypto 有意不实现它）', native.nativeImpl('MD5') === false);
+  ok('平台可用时 digestAsync("MD5") 依然返回 null（交给纯 JS）',
+    native.digestAsync('MD5', sample) === null);
+  ok('平台可用时 hmacAsync("MD5") 也返回 null',
+    native.hmacAsync('MD5', new Uint8Array(1), sample) === null);
+  ok('平台可用时 canUse("MD5") 仍是 true（纯 JS 能算）', native.canUse('MD5') === true);
+  ok('纯 JS 的 HMAC-MD5 与 Node 一致',
+    H.hex(H.hmac('MD5', Buffer.from('key'), Buffer.from('msg'))) ===
+    nodeHmacHex('md5', Buffer.from('key'), Buffer.from('msg')));
 
   /* ---------- 6. Base32 ---------- */
   section('6. Base32：RFC 4648 向量');
@@ -285,29 +346,38 @@ export default async function run() {
   /* ---------- 11. 算法名与可用性 ---------- */
   section('11. 算法名与降级分支');
   ok('带连字符的名字能认（otpauth URI 里用这个）',
-    H.byName('SHA-1').name === 'SHA-1' && H.byName('SHA-256').name === 'SHA-256');
+    H.byName('SHA-1').name === 'SHA-1' && H.byName('SHA-256').name === 'SHA-256' &&
+    H.byName('SHA-384').name === 'SHA-384' && H.byName('SHA-512').name === 'SHA-512');
   ok('不带连字符 / 大小写混写也能认',
-    H.byName('sha1').name === 'SHA-1' && H.byName('Sha512').name === 'SHA-512');
-  ok('不认识的名字返回 null', H.byName('MD5') === null && H.byName('') === null);
+    H.byName('sha1').name === 'SHA-1' && H.byName('Sha512').name === 'SHA-512' &&
+    H.byName('sha384').name === 'SHA-384');
+  ok('MD5 也认（大小写混写同样认）',
+    H.byName('MD5').name === 'MD5' && H.byName('md5').name === 'MD5');
+  ok('不认识的名字返回 null', H.byName('MD4') === null && H.byName('') === null);
   ok('hmac 遇到不认识的算法返回 null',
-    H.hmac('MD5', new Uint8Array(1), new Uint8Array(1)) === null);
-  ok('纯 JS 路径下三种算法都可用（本机有 BigInt）',
-    !H.hasSubtle() && H.canUse('SHA-1') && H.canUse('SHA-256') && H.canUse('SHA-512'));
+    H.hmac('MD4', new Uint8Array(1), new Uint8Array(1)) === null);
+  ok('纯 JS 路径下五种算法都可用（本机有 BigInt）',
+    !H.hasSubtle() && H.canUse('MD5') && H.canUse('SHA-1') && H.canUse('SHA-256') &&
+    H.canUse('SHA-384') && H.canUse('SHA-512'));
 
-  /* 把 BigInt 遮掉，验证「没有 BigInt 时 SHA-512 明确不可用」这条分支。
+  /* 把 BigInt 遮掉，验证「没有 BigInt 时 SHA-384/512 明确不可用」这条分支。
      这在页面上永远走不到（现代浏览器都有 BigInt），只能这样测。 */
   const noBig = {};
   new Function('window', 'BigInt', SRC())(noBig, undefined);
   const NB = noBig.TOOLBOX.hash;
   ok('没有 BigInt 时 hasBigInt 是 false', NB.hasBigInt === false);
-  ok('没有 BigInt 时 sha512 返回 null（不返回错值）', NB.sha512(Buffer.from('abc')) === null);
+  ok('没有 BigInt 时 sha512 / sha384 返回 null（不返回错值）',
+    NB.sha512(Buffer.from('abc')) === null && NB.sha384(Buffer.from('abc')) === null);
   ok('没有 BigInt 时 hmac("SHA-512") 返回 null',
     NB.hmac('SHA-512', new Uint8Array(1), new Uint8Array(1)) === null);
-  ok('没有 BigInt 时 canUse("SHA-512") 是 false', NB.canUse('SHA-512') === false);
-  ok('没有 BigInt 时 SHA-1 / SHA-256 仍然可用（没被连累）',
-    NB.canUse('SHA-1') && NB.canUse('SHA-256') &&
+  ok('没有 BigInt 时 canUse("SHA-512") / canUse("SHA-384") 是 false',
+    NB.canUse('SHA-512') === false && NB.canUse('SHA-384') === false);
+  ok('没有 BigInt 时 MD5 / SHA-1 / SHA-256 仍然可用（没被连累）',
+    NB.canUse('MD5') && NB.canUse('SHA-1') && NB.canUse('SHA-256') &&
     NB.hex(NB.sha256(Buffer.from('abc'))) ===
       'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+  ok('没有 BigInt 时 MD5 结果依然正确',
+    NB.hex(NB.md5(Buffer.from('abc'))) === '900150983cd24fb0d6963f7d28e17f72');
   ok('没有 BigInt 时 SHA-1 结果依然正确',
     NB.hex(NB.sha1(Buffer.from('abc'))) ===
       'a9993e364706816aba3e25717850c26c9cd0d89d');
@@ -318,7 +388,14 @@ export default async function run() {
   /* ---------- 12. 与站点数据一致 ---------- */
   section('12. 与 registry 一致');
   const T = loadRegistry();
-  const tool = T.tools.find((t) => t.slug === 'totp-generator');
-  ok('registry 里挂了 TOTP 工具且在安全分类',
+  const tool = T.tools.find((t) => t.slug === 'hash-generator');
+  ok('registry 里挂了哈希工具且在安全分类',
     tool && tool.hub === 'security', tool && tool.hub);
+  ok('描述与实现一致（列的算法和 ALGOS 对得上）',
+    ['MD5', 'SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'].every((n) => tool.desc.includes(n)),
+    tool.desc);
+  const totp = T.tools.find((t) => t.slug === 'totp-generator');
+  ok('TOTP 工具仍挂在安全分类（这一轮只加了哈希工具，没动它）',
+    totp && totp.status === 'ready' && totp.hub === 'security',
+    totp && (totp.status + '/' + totp.hub));
 }

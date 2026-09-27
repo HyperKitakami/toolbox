@@ -175,25 +175,11 @@
 
   /* --- 3. 密钥校验 ------------------------------------------------------- */
 
-  /**
-   * 写状态行。语义色（`is-ok` / `is-error` / `is-warn`）按本站约定加在**子 span**
-   * 上 —— `css/tool.css` 里写的是 `.tool-status .is-error` 这个后代选择器，
-   * 加在同一个元素上不生效（样子是灰的，颜色与加粗都吃不到）。
-   * 用建节点而不是 innerHTML：文案里会带用户输入的片段（「第 16 个字符」）。
-   */
-  function paintStatus(el, level, text) {
-    if (!el) return;
-    el.textContent = '';
-    if (!text) return;
-    if (!level) { el.textContent = text; return; }
-    var span = document.createElement('span');
-    span.className = 'is-' + level;
-    span.textContent = text;
-    el.appendChild(span);
-  }
-
+  /* 状态行统一走 T.util.setStatus —— 语义色的类必须挂在**子 span** 上
+     （`css/tool.css` 里是 `.tool-status .is-error` 这个后代选择器），
+     这个坑踩过一次，现在只有一份实现。 */
   function setSecretStatus(level, text) {
-    paintStatus(ui.secretStatus, level, text);
+    util.setStatus(ui.secretStatus, level, text);
   }
 
   /**
@@ -530,7 +516,7 @@
   }
 
   function setFoot() {
-    paintStatus(ui.status, state.bytes ? 'ok' : '',
+    util.setStatus(ui.status, state.bytes ? 'ok' : '',
       state.bytes ? '全部计算都在本机完成 · 没有网络请求 · 不会保存' : '');
   }
 
