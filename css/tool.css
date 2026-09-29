@@ -3070,4 +3070,34 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
    放进 `.panel-foot` 会把底栏顶高，这里收掉。 */
 .ln-warn { margin-top: 0; }
 
+/* --- 46. 文本排序去重（重复行清单） --------------------------------------- */
+
+/* 输出面板底栏里的提示行：`.tool-status` 自带 12px 上边距（第 14c 节），
+   放进 `.panel-foot` 会把底栏顶高，这里收掉。 */
+.ts-warn { margin-top: 0; }
+
+/* `.data-table` 的单元格默认 nowrap + max-width:360px + 省略号（第 17 节），
+   对「行内容」这一列不合适 —— 它可能很长，要能折行、也不该被截掉。 */
+.ts-report .data-table td.ts-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+/* 「次数」与「首次出现」都是短而固定的值，收成内容宽度、不参与让位
+   （`width:1%` 配 nowrap 就是 min-content，表头 .row-num 用的同一个技巧）。 */
+.ts-report .data-table th:first-child,
+.ts-report .data-table td:first-child,
+.ts-report .data-table th:last-child,
+.ts-report .data-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ts-report .data-table td:first-child { text-align: right; }
+/* 整组都是空行的那些，用弱化的颜色标出「（空行）」 */
+.ts-report .ts-blank { color: var(--text-faint); }
+
+
 
