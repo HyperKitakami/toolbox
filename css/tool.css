@@ -3054,3 +3054,20 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
 .ue-ref-ch .mono { font-size: .9rem; }
 .ue-ref-note { white-space: normal; }
 
+/* --- 45. 批量加行号（新增部分的着色、选项行里的窄输入框） ----------------- */
+
+/* 预览里用分类主题色标出「工具加上去的字符」（序号、分隔符、前后缀），
+   让用户一眼分清哪部分是原来的内容。只改渲染、不改数据：
+   标记只是多包一层 span，复制与下载拿到的仍是完整纯文本。 */
+.ln-mark { color: var(--hub-accent, var(--accent)); }
+
+/* `.input` 默认 width:100%（base.css 第 8 节），直接放进 `.choice-row` 会独占
+   一整行；按用途收窄：分隔符短，前后缀可以长一些。 */
+.ln-sep-input { width: 6.5em; }
+.ln-affix-input { width: 9em; }
+
+/* 输出面板底栏里的提示行：`.tool-status` 自带 12px 上边距（第 14c 节），
+   放进 `.panel-foot` 会把底栏顶高，这里收掉。 */
+.ln-warn { margin-top: 0; }
+
+
