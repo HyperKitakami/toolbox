@@ -79,6 +79,7 @@ tools-box/
 │       ├── password-strength.js 密码强度检测（自研）
 │       ├── totp-generator.js  TOTP 动态口令（移植）
 │       ├── hash-generator.js  哈希摘要生成（移植）
+│       ├── url-encoder.js     URL 编解码（移植）
 │       ├── kcwiki-voiceline.js KCWiki 语音台词（自研）
 │       └── whisper-verifier.js 日语语音校对（自研）
 ├── hubs/<id>/index.html       七个分类页（由脚本生成，不要手改）
@@ -98,7 +99,7 @@ tools-box/
 | 分类 | 已上线 | 规划中 | 已挂起 |
 |---|---|---|---|
 | 开发者 | JSON 格式化、CSV 查看器、Markdown 预览、Markdown 转 HTML、文本差异对比、正则表达式测试 | 0 | 5 |
-| 安全 | Base64 编解码、JWT 解码、密码强度检测、TOTP 动态口令、哈希摘要生成 | 3 | 0 |
+| 安全 | Base64 编解码、JWT 解码、密码强度检测、TOTP 动态口令、哈希摘要生成、URL 编解码 | 0 | 2 |
 | 颜色 | 颜色格式转换、取色器、颜色混合、对比度检查、调色板生成、渐变生成器 | 0 | 0 |
 | 转换 | 时间戳转换、单位换算、数字格式化、进制转换 | 0 | 2 |
 | 生成器 | 二维码生成、随机字符串、密码生成器、占位文本生成、UUID 生成器、测试数据生成 | 0 | 0 |
@@ -146,6 +147,7 @@ tools-box/
 | Base64 编解码 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `base64` | MIT |
 | TOTP 动态口令 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `totp-generator` | MIT |
 | 哈希摘要生成 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `hash-generator` | MIT |
+| URL 编解码 | [jamalofski/praticulus](https://github.com/jamalofski/praticulus) `url-encoder` | MIT |
 | 文本差异对比 | 自研 | — |
 | 字数统计 | 自研 | — |
 | 随机字符串 | 自研 | — |
@@ -258,7 +260,7 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 [Iris Digital](https://irisdigital.tech/) 构建并维护的隐私优先工具集，
 同样以 MIT 许可开源。本项目的整体形态（纯静态、零依赖、100% 客户端运行、
 一个工具一个目录加一个脚本）直接参考了它的做法，
-目前有二十个工具是基于它移植而来：
+目前有二十一个工具是基于它移植而来：
 
 - **正则表达式测试** ← `regex-tester`：沿用其模式解释算法、界面结构与交互流程
 - **JSON 格式化** ← `json-formatter`：沿用其格式化 / 压缩 / 校验的功能划分与粘贴即格式化
@@ -295,8 +297,11 @@ node scripts/test.mjs diff   # 只跑文件名含 diff 的套件
 - **哈希摘要生成** ← `hash-generator`：沿用其文本 + 文件两种输入、五种算法一次全算、
   hex / Base64 两种输出与「粘贴期望摘要反查算法」的比对框，
   并补上 SHA-384、把 MD5 的字节口径修正、给大文件加上限与替代方案
+- **URL 编解码** ← `url-encoder`：沿用其输入即处理、结果换到输入与 URL 结构拆解面板，
+  并把上游「编码 / 解码 / 编码组件」三个按钮改成「三种模式 × 两个方向」，
+  补上空格与 `+` 的互换、逐个定位的解码报错、查询参数与常用字符两张表
 
-二十者都做了中文化、设计系统统一，并修复了上游缺陷 ——
+二十一者都做了中文化、设计系统统一，并修复了上游缺陷 ——
 正则工具修掉了空匹配死循环与分享链接 base64 填充导致的参数丢失；
 JSON 工具重写了语法高亮（上游因为「先转义再匹配」导致键名与字符串值完全不着色）；
 Markdown 工具移除了 Prism 依赖，改用内置的轻量 HTML 着色；
@@ -343,7 +348,13 @@ Base32 解码过宽（`AB`、`ABC` 这类残留位非零或长度不合法、抄
 按字节塞进 32 位字，而 SHA 走 UTF-8 —— 于是**同一个字符串粘进文本框和存成文件
 拖进来，MD5 不一样**）、`crypto.subtle` 不可用时四个 SHA 静默空白、
 MD5 与 SHA-1 已破却只字不提、异步结果没有防竞态、复制没有回退，
-并给大文件补上 128 MB 上限与替代方案（WebCrypto 的摘要没有流式接口）。
+并给大文件补上 128 MB 上限与替代方案（WebCrypto 的摘要没有流式接口）；
+URL 编解码修掉了「自动判定方向」把含字面 `%XX` 的普通文本当已编码串
+（于是那种文本根本没法编码）、解码前 `trim()` 悄悄吃掉首尾空格、
+`+` 从不被当作空格（表单来的查询串本来就解不对）、
+解码失败只报一句 `Invalid encoded string`（不给位置也不给原因）、
+`encodeURI` 编码配 `decodeURIComponent` 解码导致 `%2F` 被解成 `/`、
+把占位文案写进结果元素当内容（复制按钮会把它一起复制走）。
 
 **库与数据的作者们**：[marked](https://github.com/markedjs/marked)（MarkedJS、Christopher Jeffrey）、
 [DOMPurify](https://github.com/cure53/DOMPurify)（Cure53），以及

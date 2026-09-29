@@ -895,6 +895,113 @@
 - **上游的说明区是大段 SEO 文案**（`seo-heading` / `seo-text`、内链、JSON-LD）。
   这是本站不做爬虫优化的既有决定，不是对上游实现的改动。
 
+### 21. URL 编解码
+
+| | |
+|---|---|
+| 上游文件 | `url-encoder/index.html`（9067 B）、`js/tools/url-encoder.js`（3852 B） |
+| 本项目文件 | `tools/url-encoder/index.html`、`js/tools/url-encoder.js` |
+
+改动：
+
+- 界面文案、状态行、错误提示全量中文化；上游的 `js/common.js`
+  （`escapeHtml` / `showToast` / `copyToClipboard`）未引入
+- 改用本项目的设计系统与组件类名（`.panel` / `.tool-body` / `.toolbar` /
+  `.choice-row` / `.choice-chip` / `.stat-grid` / `.data-table` /
+  `.value-list` / `.tool-status`）；上游的 `.card` / `.btn-group` /
+  `.status-bar` / `d-none` / `.url-part-row` 全部换掉
+- 界面结构保留：输入即处理（自动判定方向）、编码 / 解码两个方向与
+  「结果换到输入」，以及 URL 结构拆解面板；上游「编码 / 解码 / 编码组件」
+  三个按钮改成「三种模式 × 两个方向」—— 上游那三个按钮里，
+  「编码」走 `encodeURI`、「解码」走 `decodeURIComponent`，两个方向的口径
+  本就不一致（见下面第 5 条缺陷）
+- `lastMode` 只写不读（3 处赋值、0 处读取），删掉
+
+#### 修复的缺陷
+
+- **「自动判定方向」只看 `%XX` 在不在，含字面 `%XX` 的普通文本没法编码。**
+  上游 `isEncoded = /%[0-9A-Fa-f]{2}/` 一命中就解码，而且是在 `input` 事件里
+  直接执行 —— 粘一段「进度 100%25」进来会被解成「进度 100%」，
+  想编码它得先知道要关掉自动判定，而那个开关并不存在。现在自动判定要求
+  **整串真的解得开**（每个 `%` 后面都是合法的两位十六进制，且解出的字节是
+  合法 UTF-8），不满足就按「编码」处理；三种情形（能解开 / 看着像转义但解不出
+  文本 / 压根不像转义）在状态行里分开说清，而且**自动判定永远不报错** ——
+  报错只发生在用户自己点「解码」的时候，否则打字打到一半就会看见红字。
+- **解码前 `.trim()`。** `doDecodeURL` 里那一句会悄悄吃掉首尾空格，而首尾空格
+  恰恰是最需要被看见的东西（Web 上一大半脏数据就是它）。现在原样处理。
+- **`+` 从不被当作空格。** 上游只有 `decodeURIComponent`，而
+  `application/x-www-form-urlencoded`（表单提交、绝大多数查询串）里空格写作
+  `+`：从表单复制出来的查询串，`a+b` 会被解成 `a+b`。现在编码侧有
+  「空格编码为 `+`」、解码侧有「`+` 视为空格」两个开关，默认都关（默认关才是
+  可逆的）。判「`+` 是不是空格」看的是**输入里那个字符** —— `%2B` 解出来
+  必须是字面的加号，不会被再当成一次空格。
+- **解码失败只有一句 `Invalid encoded string`。** `decodeURIComponent` 抛的
+  URIError 里没有任何位置信息，上游也不解释。现在自己实现百分号解码，
+  逐个定位：`%` 后面不是两位十六进制（含结尾孤零零的 `%`），或字节序列不是
+  合法 UTF-8（首字节非法 / 续接字节非法 / 截断 / 过长编码 / 代理项 / 超出码位
+  范围），都给出「第几个字符」「哪几个字节」，并说明怎么改（字面的百分号写
+  `%25`）。字节按 GBK 能解开时附一句推测值（老站点用 GBK 编码查询串很常见，
+  `%C4%E3` 就是「你」），措辞上标明是推测。
+- **`encodeURI` 与 `decodeURIComponent` 不对称。** 上游编码走 `encodeURI`、
+  解码走 `decodeURIComponent`，于是「整条 URL」编码后 `%2F` 会被解回 `/` ——
+  `%2F` 是路径段里的字面斜线、`/` 是分隔符，URL 的结构被悄悄改掉了。
+  现在模式同时决定两个方向：整条 URL 模式下解码保留保留字的转义，
+  与 `decodeURI` 一致。
+- **占位文案被当成结果内容写进元素里**（`output.textContent = 'Result will
+  appear here...'`），`swapIO` 拿它当哨兵比较，复制按钮还会把占位文案复制走。
+  改用 `.output` 的 `data-placeholder` 空态。
+- **复制裸调 `navigator.clipboard`**（没有回退、没有反馈）。改走
+  `T.util.copy` + `data-copy-target`，拆解面板的行另点即复制。
+
+上游说明区里「Decode: Reverses both encoding types automatically」这条也是不准的：
+`decodeURIComponent` 并不能忠实地反向 `encodeURI`（见上面 `%2F` 那一条），
+现在由模式显式决定。
+
+#### 新增
+
+- **三种模式**：组件（`encodeURIComponent` / `decodeURIComponent`）、
+  整条 URL（`encodeURI` / `decodeURI`）、严格（RFC 3986 §2.3 的非保留字之外
+  全编码，连 `! ' ( ) *` 也编 —— JWT、OAuth 1.0 的签名基串要的是这一种，
+  而多数语言的 `urlencode` 默认不编它们，签名对不上时很难往这上面想）。
+- **四个统计格**：输入字符数、输出字符数、百分号转义、非 ASCII 字符；
+  字符数按 Unicode 码点计（一个 emoji 算 1 个）。面板底栏写明两个方向各自的
+  计数口径。
+- **查询参数逐条拆解**：参数名 / 原样 / 解码后三列，空段跳过、无值的参数标
+  「（无值）」，解码失败的单元格标红。
+- **常用字符转义对照表**（36 行）：表里的十六进制与百分号编码是**由 UTF-8 字节
+  算出来的**，不是抄的 —— 手抄一张表迟早跟实现对不上，而那正是最难发现的一类错。
+- **落单代理项的显式提示**：输入里有不成对的 UTF-16 半个字符时，它们会被编成
+  U+FFFD（`TextEncoder` 的既定行为，静默发生），状态行会说出有几个、并说明
+  原文那一处已不可还原。
+
+#### 自研部分的验证方式：对平台实现交叉校验
+
+百分号编解码是自己写的（`decodeURIComponent` 给不出错误位置，见上），
+所以不能「自己算一遍看着对」。做法是把纯函数抠到
+`.temporary/url-encoder/probe-core.mjs`，用 V8 自带的
+`encodeURIComponent` / `encodeURI` / `decodeURIComponent` / `decodeURI` /
+`TextEncoder` 当参照物逐条比对，共 213 项：
+
+- **全 ASCII（0x00–0x7F）整串扫一遍**，三种模式的编码结果必须与平台实现逐字节相同
+  —— 自研的「哪些字符放行」表只要漏一个或多一个，这里立刻红；
+- 12 组多字节样本（CJK、`café`、emoji、代理对、`~!*'()`、`[]{}|\`^<>"`、
+  超长串）三种模式各跑一遍；
+- 严格模式没有对应的平台函数，参照物用
+  `encodeURIComponent(s).replace(/[!'()*]/g, …)` 独立推一遍；
+- 解码侧 18 组输入分别与 `decodeURIComponent`（组件模式）和 `decodeURI`
+  （整条 URL 模式）对齐；
+- `utf8Bytes` 与 `TextEncoder` 逐字节比对、严格解码往返；
+- 12 组非法输入的错误分类与位置（截断 / 孤立续接字节 / 过长编码 / 代理项 /
+  非法首字节 / `%` 不成对）逐条断言。
+
+**不算缺陷**
+
+- **上游的说明区是大段 SEO 文案**（`seo-heading` / `seo-text`、内链、JSON-LD）。
+  同第 20 条：这是本站不做爬虫优化的既有决定。
+- **URL 结构拆解里 `new URL` 的标准化行为**（主机名转小写、IDN 转 punycode、
+  缺省路径补成 `/`）不是缺陷，是规范要求；面板底栏照实写出来，不假装拿到的是
+  原样文本。
+
 ---
 
 > 上游另有一套 `js/umd-guard.js` / `js/umd-unguard.js`，在加载内置库时临时屏蔽

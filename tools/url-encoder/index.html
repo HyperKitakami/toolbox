@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>URL 编解码 · 工具箱</title>
+<meta name="description" content="对 URL、查询参数与组件做百分号编码或解码，支持组件 / 整条 URL / RFC 3986 严格三种模式、空格与 + 的互换、UTF-8 字节级校验。解码失败会指出是第几个字符、哪几个字节不合法，并把网址拆成协议、主机、路径、查询参数与片段。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css?v=dee542d6">
+<link rel="stylesheet" href="../../css/site.css?v=da4b5ba1">
+<link rel="stylesheet" href="../../css/tool.css?v=9605d4c0">
+<script src="../../js/theme-init.js?v=f8313ac9"></script>
+</head>
+<body data-tool="url-encoder" data-hub="security">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../hubs/ai/">AI 辅助</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/security/">安全</a>
+      <span class="sep">/</span>
+      <span aria-current="page">URL 编解码</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>URL 编解码</h1>
+        <p class="lead">
+          把网址、查询参数和路径段做<strong>百分号编码</strong>或解码。三种模式对应三套口径，
+          空格与 <code class="mono">+</code> 可以互转。解码失败时这里会指出
+          <strong>是第几个字符、哪几个字节不合法</strong>，而不是含糊地报一句「无效」；
+          网址还会被拆成协议、主机、路径、查询参数与片段逐条列出。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">无草稿保存</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <div class="tool-body">
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">输入</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-demo>填入示例</button>
+              <button class="btn btn--sm" type="button" data-clear>清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <textarea class="textarea" id="ue-input" rows="10" spellcheck="false"
+                      placeholder="要编码 / 解码的网址、查询串或文本…"></textarea>
+
+            <div class="toolbar">
+              <span class="toolbar-label">模式</span>
+              <div class="choice-row" id="ue-modes" role="group" aria-label="编码模式">
+                <button class="choice-chip" type="button" data-mode="component" aria-pressed="true">组件</button>
+                <button class="choice-chip" type="button" data-mode="uri" aria-pressed="false">整条 URL</button>
+                <button class="choice-chip" type="button" data-mode="strict" aria-pressed="false">严格</button>
+              </div>
+            </div>
+
+            <div class="toolbar ue-panel-toolbar">
+              <label class="switch"><input type="checkbox" id="ue-space-plus"> 空格编码为 <code class="mono">+</code></label>
+              <label class="switch"><input type="checkbox" id="ue-plus-space"> 解码时 <code class="mono">+</code> 视为空格</label>
+              <label class="switch"><input type="checkbox" id="ue-lower"> 小写十六进制</label>
+              <label class="switch"><input type="checkbox" id="ue-auto" checked> 自动判定方向</label>
+            </div>
+
+            <div class="toolbar ue-actions">
+              <button class="btn" type="button" id="ue-encode">URL 编码</button>
+              <button class="btn" type="button" id="ue-decode">URL 解码</button>
+              <button class="btn" type="button" id="ue-swap" disabled>结果换到输入</button>
+            </div>
+          </div>
+          <div class="panel-foot">
+            <span>输入不会离开浏览器 · Ctrl / Cmd + Enter 直接编码</span>
+            <span>本页没有草稿保存，关闭页面即清空</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">结果</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-copy-target="#ue-output">复制</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <pre class="output" id="ue-output" data-placeholder="结果会显示在这里"></pre>
+          </div>
+          <div class="panel-foot">
+            <span class="tool-status" id="ue-status"></span>
+          </div>
+        </section>
+
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">计数</span>
+        </div>
+        <div class="panel-body">
+          <div class="stat-grid ue-stats" id="ue-stats"></div>
+        </div>
+        <div class="panel-foot">
+          <span>字符数按 Unicode 码点计（一个 emoji 算 1 个，不算 2 个）</span>
+          <span>编码方向：转义数与「非 ASCII」数输入里的；解码方向：数结果里的</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">URL 结构拆解</span>
+        </div>
+        <div class="panel-body">
+          <div class="value-list ue-rows" id="ue-parts" hidden></div>
+          <div class="ue-empty" id="ue-parts-empty"></div>
+          <div class="table-scroll table-scroll--boxed ue-params" id="ue-params-wrap" hidden>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>参数</th>
+                  <th>原样值</th>
+                  <th>解码后</th>
+                </tr>
+              </thead>
+              <tbody id="ue-params"></tbody>
+            </table>
+          </div>
+          <p class="hint" id="ue-params-note" hidden></p>
+        </div>
+        <div class="panel-foot">
+          <span>拆解走浏览器原生的 URL 解析，它会做标准化：主机名转小写、IDN 域名转 punycode（<code class="mono">例子.jp</code> → <code class="mono">xn--fsqu00a.jp</code>）、缺省的路径补成 <code class="mono">/</code></span>
+          <span>查询参数一律按「组件」语义解码，<code class="mono">+</code> 是否算空格跟随上面的开关</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">常用字符转义对照</span>
+        </div>
+        <div class="panel-body">
+          <div class="table-scroll table-scroll--boxed ue-ref">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>字符</th>
+                  <th>UTF-8 字节</th>
+                  <th>百分号编码</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody id="ue-ref"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel-foot">
+          <span>表里的十六进制与百分号编码都是按 UTF-8 字节算出来的，没有手工抄写</span>
+          <span><code class="mono">- . _ ~</code> 是非保留字，任何模式下都不会被编码，表里列出的是它们的字节值</span>
+          <span>「组件」模式编码的字符集最宽，「严格」模式只放行 <code class="mono">A–Z a–z 0–9 - . _ ~</code></span>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>百分号编码在做什么</h3>
+        <ul>
+          <li>URL 里只允许出现一小撮 ASCII 字符，其余一律要写成 <code class="mono">%</code>
+            加两位十六进制 —— 这就是「百分号编码」（也叫 URL 编码）。</li>
+          <li>被编码的单位是<strong>字节</strong>，不是字符。文本先按 UTF-8 变成字节，
+            再逐个字节编码。所以一个汉字是 <strong>3 个字节 → 9 个字符</strong>
+            （<code class="mono">中</code> → <code class="mono">%E4%B8%AD</code>），
+            一个 emoji 是 4 个字节 → 12 个字符。这也是中文网址看起来很长的原因。</li>
+          <li>RFC 3986 §2.3 把 <code class="mono">A–Z a–z 0–9 - . _ ~</code> 定为
+            <strong>非保留字</strong>，它们永远不需要编码；其余字符该不该编码，
+            取决于它出现在 URL 的哪个位置 —— 这就是三种模式的由来。</li>
+          <li>十六进制<strong>大小写都合法</strong>（RFC 3986 建议大写，本站默认大写），
+            解码时两种都收。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>三种模式的区别</h3>
+        <ul>
+          <li><strong>组件</strong>（<code class="mono">encodeURIComponent</code>）：
+            除了非保留字与 <code class="mono">! ' ( ) *</code> 全部编码。
+            处理<strong>查询参数值、路径段</strong>用这个 ——
+            <code class="mono">a/b?c=d</code> → <code class="mono">a%2Fb%3Fc%3Dd</code>。</li>
+          <li><strong>整条 URL</strong>（<code class="mono">encodeURI</code>）：
+            额外放行 <code class="mono">; , / ? : @ &amp; = + $ #</code> 这些分隔符，
+            所以整条网址编完之后<strong>结构还在</strong>：
+            <code class="mono">https://a.com/b?c=d</code> 里只有空格这类真需要编的东西会变。</li>
+          <li><strong>严格</strong>（RFC 3986 字面口径）：只放行非保留字，连
+            <code class="mono">! ' ( ) *</code> 都编码。
+            JWT、OAuth 1.0 的签名基串要的是这一种 —— 那里把 <code class="mono">!</code>
+            留着不编码会导致签名对不上，而大多数语言的 <code class="mono">urlencode</code>
+            默认不编它们。</li>
+          <li><strong>模式同时管两个方向。</strong>「整条 URL」模式下解码会<strong>保留</strong>
+            分隔符的转义：<code class="mono">%2F</code> 保持原样，因为它是路径段里的
+            字面斜线，解成 <code class="mono">/</code> 就成了分隔符、把 URL 的结构改掉了
+            （与 <code class="mono">decodeURI</code> 一致）。要把它解出来就用「组件」模式。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>空格、<code class="mono">+</code> 与 <code class="mono">%20</code></h3>
+        <ul>
+          <li>路径里的空格标准写法是 <code class="mono">%20</code>；而在
+            <code class="mono">application/x-www-form-urlencoded</code>
+            里（表单提交、绝大多数查询串），空格写成 <code class="mono">+</code>。
+            同一个 URL 里两套写法并存是常态。</li>
+          <li>所以「空格编码为 <code class="mono">+</code>」与「解码时 <code class="mono">+</code>
+            视为空格」是一对配套开关，<strong>默认都关</strong> ——
+            默认关掉才是可逆的：不知道上下文就假定 <code class="mono">+</code> 是空格，
+            会把 <code class="mono">C++</code> 解成 <code class="mono">C  </code>。</li>
+          <li>判「<code class="mono">+</code> 是不是空格」看的是<strong>输入里那个字符</strong>。
+            <code class="mono">%2B</code> 解出来永远是字面的加号，不会被再当成空格。</li>
+          <li><strong>首尾空格不会被吃掉。</strong>这里不做 <code class="mono">trim</code>：
+            粘贴时多带一个空格是常见事故，工具悄悄替你删掉才是真麻烦。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>解码为什么会失败</h3>
+        <ul>
+          <li><strong>转义不完整</strong>：出现一个 <code class="mono">%</code>，后面不是两位十六进制
+            （<code class="mono">%.5</code>、<code class="mono">%2G</code>、结尾孤零零的
+            <code class="mono">%</code>）。想表示字面的百分号，写法是 <code class="mono">%25</code>。</li>
+          <li><strong>字节序列不是合法 UTF-8</strong>：多字节字符被截断、续接字节位置不对、
+            过长的编码、代理项码位…… 百分号编码只保证<strong>字节被原样搬运</strong>，
+            不保证那串字节是文本。</li>
+          <li>这两种情况这里都会给出<strong>第几个字符、哪几个字节</strong>。
+            原生 <code class="mono">decodeURIComponent</code> 抛的是一句
+            <code class="mono">URI malformed</code>，没有位置也没有原因，对着几百个
+            <code class="mono">%</code> 只能一个个数。</li>
+          <li>如果字节按 GBK 能解开，状态行里会附一句推测值 ——
+            老站点用 GBK 编码查询串很常见（<code class="mono">%C4%E3</code> 就是「你」），
+            但浏览器只认 UTF-8，原生接口只会报错。这里说清是推测，不冒充结论。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>来源与致谢</h3>
+        <ul>
+          <li>移植自 <a href="https://github.com/jamalofski/praticulus" target="_blank" rel="noopener">jamalofski/praticulus</a>
+            的 <code class="mono">url-encoder</code>（MIT，作者 Jamal Tantaoui / Iris Digital）。
+            沿用了它「输入框 + 编码 / 解码 / 编码组件 + 结构拆解」的形态与输入即处理的做法。</li>
+          <li>移植时做了三件事：全量中文化、改用本站的设计系统与组件类名、逐段审逻辑修缺陷。
+            详细改动清单见 <code class="mono">js/tools/url-encoder.js</code> 的文件头注释与
+            <a href="../../THIRD-PARTY.md">THIRD-PARTY.md</a>。</li>
+          <li>改动里最要紧的三处：自动判定方向会把含字面 <code class="mono">%XX</code>
+            的普通文本误当已编码串（于是根本没法编码它）、解码前 <code class="mono">trim()</code>
+            会吃掉首尾空格、以及解码失败只报一句「Invalid encoded string」。</li>
+          <li><strong>本页不保存任何草稿。</strong>安全分类的工具不写
+            <code class="mono">localStorage</code>、不把输入拼进 URL、也不挂表单 ——
+            关掉页面输入就没了，这是刻意的，不是漏了。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。除「AI 辅助」分类会调用外部模型外，
+          其余工具都在浏览器本地运行，不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+          <li><a href="../../hubs/ai/">AI 辅助</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js?v=609c4079" defer></script>
+<script src="../../js/site.js?v=460fbaea" defer></script>
+<script src="../../js/tools/url-encoder.js?v=151bc5e4" defer></script>
+</body>
+</html>

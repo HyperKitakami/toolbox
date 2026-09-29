@@ -942,7 +942,8 @@ kbd.hint-key {
    .wv-result-empty（日语语音校对：还没开始分析）、
    .ps-empty（密码强度检测：还没输入 / 没有命中模式）、
    .totp-empty（TOTP：还没填密钥）、
-   .totp-qr-empty（TOTP：二维码未生成 / 已隐藏） */
+   .totp-qr-empty（TOTP：二维码未生成 / 已隐藏）、
+   .ue-empty（URL 编解码：输入不是一条能解析的 URL） */
 .code-empty,
 .table-empty,
 .outline-empty,
@@ -953,7 +954,8 @@ kbd.hint-key {
 .wv-result-empty,
 .ps-empty,
 .totp-empty,
-.totp-qr-empty {
+.totp-qr-empty,
+.ue-empty {
   padding: 30px 14px;
   text-align: center;
   font-size: .88rem;
@@ -967,7 +969,8 @@ kbd.hint-key {
 .wv-result-empty strong,
 .ps-empty strong,
 .totp-empty strong,
-.totp-qr-empty strong {
+.totp-qr-empty strong,
+.ue-empty strong {
   display: block;
   margin-bottom: 5px;
   color: var(--text);
@@ -3010,3 +3013,44 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
   .hash-meta { flex: 1 1 100%; order: 3; margin-top: -2px; }
   .hash-value { font-size: .74rem; }
 }
+
+/* --- 44. URL 编解码（模式胶囊、拆解面板、转义对照表） ------------------- */
+
+/* 输入面板里有三条控件条：`.panel-body > .toolbar` 只给第一条留 14px 上边距，
+   后两条要自己收一点，否则间距比面板内边距还大（同 base64 的 .b64-actions）。 */
+.ue-panel-toolbar,
+.ue-actions { margin-top: 10px; }
+
+/* 拆解行整行可点即复制，鼠标形状与通用列表一致 */
+.ue-rows .value-row { cursor: pointer; }
+
+/* 拆解面板的标签是「协议 / 主机 / 端口 / 用户信息」这类短词，比通用的 58px 宽一点；
+   值可能是很长的路径或查询串，允许在任意位置折行。 */
+.ue-rows .value-row { grid-template-columns: minmax(64px, 96px) minmax(0, 1fr); }
+.ue-rows .value-text { overflow-wrap: anywhere; }
+
+/* 查询参数表紧跟在拆解列表下面，自带上边距；数字与十六进制用等宽
+   （表格里的 td 默认 nowrap + 省略号，长查询串会被截掉，这里放开换行）。 */
+.ue-params { margin-top: 14px; }
+.ue-params .data-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* 参数名那一列不参与换行与让位：`overflow-wrap: anywhere` 会把 `page`
+   拆成 `pag` + `e`，而这一列本来就不长，用 width:1% 让它收成内容宽度。 */
+.ue-params .data-table th:first-child,
+.ue-params .data-table td:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  /* 窄屏把单元格内边距收回一点，三列才都排得下 */
+  .ue-params .data-table th,
+  .ue-params .data-table td { padding: 6px 8px; }
+}
+
+/* 转义对照表：字符列居中，说明列允许换行 */
+.ue-ref .data-table td:first-child { text-align: center; }
+.ue-ref-ch .mono { font-size: .9rem; }
+.ue-ref-note { white-space: normal; }
+
