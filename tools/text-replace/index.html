@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>批量查找替换 · 工具箱</title>
+<meta name="description" content="按从上到下的顺序依次应用多条查找替换规则，纯文本与正则混用；正则支持 $1、$&amp;、$&lt;名&gt; 等引用，替换前先给出命中清单与逐条规则的命中统计。全部在浏览器本地完成。">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/base.css?v=dee542d6">
+<link rel="stylesheet" href="../../css/site.css?v=da4b5ba1">
+<link rel="stylesheet" href="../../css/tool.css?v=384e7b4c">
+<script src="../../js/theme-init.js?v=f8313ac9"></script>
+</head>
+<body data-tool="text-replace" data-hub="text">
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<!-- chrome:header:start -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../../">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+      </span>
+      <span>工具箱 <span class="brand-sub">Toolbox</span></span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="../../hubs/developer/">开发者</a>
+      <a href="../../hubs/security/">安全</a>
+      <a href="../../hubs/color/">颜色</a>
+      <a href="../../hubs/converters/">转换</a>
+      <a href="../../hubs/generators/">生成器</a>
+      <a href="../../hubs/text/">文本</a>
+      <a href="../../hubs/ai/">AI 辅助</a>
+      <a href="../../about/">关于</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="搜索工具">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.2"/><path d="m15.6 15.6 4.1 4.1"/></svg>
+        <span>搜索</span>
+        <span class="kbd">/</span>
+      </button>
+      <button class="theme-toggle btn btn--icon" type="button" aria-label="切换主题">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- chrome:header:end -->
+
+<main id="main">
+  <div class="container tool-page">
+
+    <nav class="breadcrumb" aria-label="面包屑">
+      <a href="../../">首页</a>
+      <span class="sep">/</span>
+      <a href="../../hubs/text/">文本</a>
+      <span class="sep">/</span>
+      <span aria-current="page">批量查找替换</span>
+    </nav>
+
+    <header class="tool-head">
+      <span class="tool-head-icon" data-hub-icon aria-hidden="true"></span>
+      <div class="tool-head-text">
+        <h1>批量查找替换</h1>
+        <p class="lead">
+          按从上到下的顺序依次应用多条规则，每条可以选「纯文本」或「正则」，一条规则的全部命中都会被替换。
+          这里没有「执行」按钮 —— 右侧结果区就是预览，改一下规则立刻能看到会变成什么样，
+          下面还列出每一处命中的原文与每条规则分别命中了多少次。
+        </p>
+        <div class="tool-head-meta">
+          <span class="badge badge--ready">已上线</span>
+          <span class="badge">本地运行</span>
+          <span class="badge">实时更新</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tool-stack">
+
+      <!-- 1. 输入 / 输出 -->
+      <div class="tool-body">
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">原始文本</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-demo>填入示例</button>
+              <button class="btn btn--sm" type="button" data-clear>清空</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <textarea class="textarea" id="tr-input" rows="16" spellcheck="false"
+                      placeholder="把要处理的文本粘贴到这里…"></textarea>
+          </div>
+          <div class="panel-foot">
+            <span>输入内容不会离开浏览器</span>
+            <span id="tr-status"></span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="panel-title">替换结果</span>
+            <div class="panel-actions">
+              <button class="btn btn--sm" type="button" data-copy-target="#tr-output">复制</button>
+              <button class="btn btn--sm" type="button" id="tr-download">下载</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <pre class="output" id="tr-output" data-placeholder="替换结果会显示在这里"></pre>
+          </div>
+          <div class="panel-foot">
+            <span id="tr-out-foot"></span>
+            <div class="tool-status tr-warn" id="tr-warn"></div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- 2. 规则 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">查找替换规则</span>
+          <div class="panel-actions">
+            <button class="btn btn--sm" type="button" id="tr-add">添加规则</button>
+            <button class="btn btn--sm" type="button" id="tr-reset">恢复默认</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tr-rules" id="tr-rules"></div>
+
+          <div class="opt-grid tr-opts">
+
+            <div class="opt-row">
+              <span class="opt-label">匹配</span>
+              <div class="choice-row">
+                <button class="choice-chip" type="button" data-toggle="ignoreCase" aria-pressed="false">忽略大小写</button>
+                <button class="choice-chip" type="button" data-toggle="wholeWord" aria-pressed="false">全词匹配</button>
+                <span class="opt-note">全词匹配按 <code class="mono">\b</code> 判断，对纯中文的查找内容不成立</span>
+              </div>
+            </div>
+
+            <div class="opt-row">
+              <span class="opt-label">正则标志</span>
+              <div class="choice-row">
+                <button class="choice-chip" type="button" data-toggle="flagM" aria-pressed="false">多行 ^ $</button>
+                <button class="choice-chip" type="button" data-toggle="flagS" aria-pressed="false">点号跨行</button>
+                <button class="choice-chip" type="button" data-toggle="flagU" aria-pressed="false">Unicode</button>
+                <span class="opt-note">只对标记为「正则」的规则有效；<code class="mono">g</code> 一直是开的</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="panel-foot">
+          <span>规则<strong>从上到下依次执行</strong>，每条都在前一条的结果上继续。
+            查找与替换内容里写 <code class="mono">\t</code> 表示制表符、<code class="mono">\n</code> 表示换行、
+            <code class="mono">\\</code> 表示反斜杠本身（正则规则的查找内容由正则引擎自己解释，不做这层转义）</span>
+        </div>
+      </section>
+
+      <!-- 3. 概览 + 规则表 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">处理概览</span>
+        </div>
+        <div class="panel-body">
+          <div class="stat-grid" id="tr-stats"></div>
+        </div>
+        <div class="table-scroll table-scroll--boxed tr-report" id="tr-rule-report"></div>
+        <div class="panel-foot">
+          <span id="tr-foot"></span>
+        </div>
+      </section>
+
+      <!-- 4. 命中清单 -->
+      <section class="panel">
+        <div class="panel-head">
+          <span class="panel-title">命中清单</span>
+        </div>
+        <div class="table-scroll table-scroll--boxed tr-report" id="tr-hits"></div>
+        <div class="panel-foot">
+          <span id="tr-hit-foot"></span>
+        </div>
+      </section>
+
+    </div>
+
+    <section class="tool-notes">
+      <div class="tool-note">
+        <h3>两种查找方式的差别</h3>
+        <ul>
+          <li><strong>纯文本</strong>：查找内容按<strong>字面</strong>匹配，不用管正则的元字符
+            （查一个 <code class="mono">(</code> 就直接写 <code class="mono">(</code>）。
+            替换内容也按字面写入，<strong>不解析 <code class="mono">$1</code> 之类的引用</strong> ——
+            这一点与「正则」模式刚好相反。</li>
+          <li><strong>正则</strong>：查找内容是一条正则表达式，替换内容里可以写引用：
+            <code class="mono">$1</code>–<code class="mono">$99</code> 捕获组、
+            <code class="mono">$&amp;</code> 整个匹配、<code class="mono">$`</code> 匹配之前的文本、
+            <code class="mono">$'</code> 匹配之后的文本、<code class="mono">$&lt;名字&gt;</code> 具名组、
+            <code class="mono">$$</code> 一个 <code class="mono">$</code>。
+            组号超出实际组数时整个 <code class="mono">$n</code> 按字面留下（
+            <code class="mono">$99</code> 就是一个字面的 <code class="mono">$99</code>），
+            组存在但这一处没参与匹配则给空串。这些规则与浏览器的
+            <code class="mono">String.replace</code> 逐字一致。</li>
+          <li>要替换制表符或换行：查找与替换内容里写 <code class="mono">\t</code> 与
+            <code class="mono">\n</code>。想查找一个字面的反斜杠写 <code class="mono">\\</code>。</li>
+          <li>正则规则的查找内容由正则引擎解释，<strong>不再做上面那层转义</strong> ——
+            正则里 <code class="mono">\t</code> 本来就是制表符。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>规则怎么执行、命中怎么算</h3>
+        <ul>
+          <li><strong>顺序固定</strong>：第 2 条规则看到的文本，是第 1 条替换之后的结果。
+            所以顺序会改变结果，用行上的 <code class="mono">↑</code> <code class="mono">↓</code> 调整。</li>
+          <li>每条规则都是<strong>全部替换</strong>，没有「只替换第一处」这种选项。</li>
+          <li><strong>空匹配也会被替换</strong>：正则 <code class="mono">a*</code> 在 <code class="mono">bbb</code>
+            上有 4 处命中（每个字符位置各一次，含末尾），结果是 <code class="mono">-b-b-b-</code>。
+            这是标准行为，不是重复计数。</li>
+          <li>命中清单里的<strong>行号以该条规则执行时的文本为准</strong> ——
+            前面的规则可能已经增删过换行，所以同一个位置在不同规则下不一定是同一行。
+            清单按规则顺序排列，最多列出前 200 处。</li>
+          <li>没填查找内容的规则会被跳过（空正则会在每个位置插入替换内容），
+            状态栏会说明哪条规则没做事。</li>
+          <li>有两件事会<strong>静默失效</strong>，页面会主动点出来：
+            没打开「Unicode」标志就写 <code class="mono">\p{…}</code>
+            （不开时 <code class="mono">\p</code> 会被当成字面的 <code class="mono">p</code>，
+            表达式照样编译通过、照样「没有命中」）；
+            以及把「全词匹配」用在纯中文的查找内容上（<code class="mono">\b</code> 只认 ASCII 词字符）。</li>
+        </ul>
+      </div>
+      <div class="tool-note">
+        <h3>常见用途</h3>
+        <ul>
+          <li>清洗导出的表格：先用正则 <code class="mono">\s{2,}</code> 把连续空白压成一个制表符，
+            再把 <code class="mono">￥\s*</code> 换成 <code class="mono">¥</code>。</li>
+          <li>换日期格式：正则 <code class="mono">(\d{4})-(\d{2})-(\d{2})</code> 替换为
+            <code class="mono">$3/$2/$1</code>。</li>
+          <li>给一列标识统一加前缀：纯文本查找 <code class="mono">A-</code>、替换为
+            <code class="mono">ORD-</code>。</li>
+          <li>把换行去掉接成一行：查找 <code class="mono">\n</code>、替换为空格。</li>
+          <li>去掉行首缩进：正则查找 <code class="mono">^[ \t]+</code>（记得打开「多行 ^ $」）。</li>
+          <li>写正则时可以先用「正则表达式测试」工具把表达式调对，再拿过来批量替换。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="related">
+      <h2>同分类的其他工具</h2>
+      <div class="tool-grid" id="related-grid"></div>
+    </section>
+
+  </div>
+</main>
+
+<!-- chrome:footer:start -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Z"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 12.5h16"/></svg>
+          </span>
+          <span>工具箱</span>
+        </div>
+        <p class="footer-about">
+          纯静态的个人在线工具箱。除「AI 辅助」分类会调用外部模型外，
+          其余工具都在浏览器本地运行，不收集数据，不加载第三方资源。
+        </p>
+      </div>
+      <div>
+        <p class="footer-title">分类</p>
+        <ul class="footer-list">
+          <li><a href="../../hubs/developer/">开发者</a></li>
+          <li><a href="../../hubs/security/">安全</a></li>
+          <li><a href="../../hubs/color/">颜色</a></li>
+          <li><a href="../../hubs/converters/">转换</a></li>
+          <li><a href="../../hubs/generators/">生成器</a></li>
+          <li><a href="../../hubs/text/">文本</a></li>
+          <li><a href="../../hubs/ai/">AI 辅助</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="footer-title">站点</p>
+        <ul class="footer-list">
+          <li><a href="../../">首页</a></li>
+          <li><a href="../../about/">关于本站</a></li>
+          <li><a href="../../privacy/">隐私说明</a></li>
+          <li><a href="../../tools/_template/">工具模板</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© <span data-year>2026</span> 工具箱 · 纯静态 · 无追踪 · 无账号</p>
+      <div class="footer-links">
+        <a href="../../about/">关于</a>
+        <a href="../../privacy/">隐私</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<!-- chrome:footer:end -->
+
+<script src="../../js/registry.js?v=f426c5e5" defer></script>
+<script src="../../js/site.js?v=460fbaea" defer></script>
+<script src="../../js/tools/text-replace.js?v=62a52724" defer></script>
+</body>
+</html>

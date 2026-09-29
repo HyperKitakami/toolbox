@@ -3099,5 +3099,75 @@ button.jwt-part:hover { border-color: var(--border-strong); background: var(--su
 /* 整组都是空行的那些，用弱化的颜色标出「（空行）」 */
 .ts-report .ts-blank { color: var(--text-faint); }
 
+/* --- 47. 批量查找替换（规则行、规则表与命中清单） ------------------------- */
+
+/* 规则行：上一行是序号与操作按钮，下一行是三个字段。
+   字段行宽屏三列（查找 / 方式 / 替换为），窄屏单列堆叠。 */
+.tr-rules { display: grid; gap: 10px; }
+
+.tr-rule {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.tr-rule--off { opacity: .62; }
+
+.tr-rule-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+.tr-rule-no { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tr-rule-sep { flex: 1; }
+
+.tr-rule-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  gap: 8px;
+  align-items: end;
+}
+.tr-field { display: grid; gap: 4px; min-width: 0; }
+.tr-field-label { font-size: .76rem; color: var(--text-faint); }
+
+/* 规则行里的按钮比通用的 .btn--icon（36px）收一圈 —— 三个 36px 的按钮会把行撑高，
+   而这里只是行内的小操作。 */
+.tr-icon-btn { width: 28px; height: 28px; font-size: .95rem; line-height: 1; }
+
+.tr-opts { margin-top: 14px; }
+
+@media (max-width: 620px) {
+  .tr-rule-fields { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* 规则表与命中清单：`.data-table` 的单元格默认 nowrap + 省略号（第 17 节）。
+   「查找」与「命中内容」里常有制表符这类看不见的字符（渲染时已换成记号），
+   用等宽显示更好认；其余几列都是短而固定的值，收成内容宽度（`width:1%` 配
+   nowrap 就是 min-content），把多出来的宽度全留给内容列。 */
+.tr-report .tr-find { font-family: var(--font-mono); font-size: .8rem; }
+.tr-report .tr-num,
+.tr-report .tr-mode,
+.tr-report .tr-status { width: 1%; white-space: nowrap; }
+.tr-report .tr-count {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* 状态一列：「没有命中」用琥珀色点名（用户最想一眼看到的就是它），
+   正则有误用红色；「已应用」不上色 —— 文本分类的主题色本身就是绿的，
+   再套 --ok 会与「点亮」的语义混在一起。 */
+.tr-report .tr-hit-none { color: var(--warn); font-weight: 600; }
+.tr-report .tr-hit-error { color: var(--danger); font-weight: 600; }
+.tr-report .tr-hit-off { color: var(--text-faint); }
+.tr-report .tr-empty { color: var(--text-faint); }
+
+/* 输出面板底栏里的提示行：`.tool-status` 自带 12px 上边距（第 14c 节） */
+.tr-warn { margin-top: 0; }
+
 
 
